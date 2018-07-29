@@ -23,10 +23,10 @@ var utils = require('./utils');
 
 var LedgerApp = function (comm) {
     this.comm = comm;
-    this.comm.setScrambleKey('ABC');
+    this.comm.setScrambleKey('CSM');
 };
 
-const CLA = 0x77;
+const CLA = 0x55;
 const INS_GET_VERSION = 0x00;
 
 function serialize(CLA, INS, p1 = 0, p2 = 0, data = null) {

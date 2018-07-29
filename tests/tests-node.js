@@ -25,8 +25,8 @@ browser = false;
 
 const TIMEOUT = 1000;
 const EXPECTED_MAJOR = 0;
-const EXPECTED_MINOR = 0;
-const EXPECTED_PATCH = 0;
+const EXPECTED_MINOR = 1;
+const EXPECTED_PATCH = 1;
 
 describe('get_version', function () {
     let response;
