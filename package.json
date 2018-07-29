@@ -1,0 +1,40 @@
+{
+  "name": "ledger-js",
+  "version": "0.0.1",
+  "description": "Node API for Ledger Nano S - Example app",
+  "main": "./src/index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zondax/ledger-js"
+  },
+  "keywords": [
+    "Ledger",
+    "Javascript",
+    "Example App"
+  ],
+  "author": "ZondaX GmbH",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/zondax/ledger-js/issues"
+  },
+  "homepage": "https://github.com/zondax/ledger-js",
+  "dependencies": {
+    "chai": "^4.1.2",
+    "node-hid": "0.6.0",
+    "mocha": "^5.0.1",
+    "q": "1.5.1"
+  },
+  "devDependencies": {
+    "browserify": "16.2.2",
+    "uglify-js": "3.4.6"
+  },
+  "scripts": {
+    "browserify": "browserify --im --s=ledger -o browser/ledger.js src/index-browserify.js; cp src/chrome-u2f-api.js browser/",
+    "test-browserify": "browserify --im --standalone runExample -o tests/browser/test-bundle.js tests/tests-browser.js",
+    "test": "mocha tests/tests-node.js",
+    "clean": "rm -f browser/*.js"
+  },
+  "browser": {
+    "node-hid": false
+  }
+}
