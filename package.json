@@ -1,23 +1,24 @@
 {
-  "name": "ledger-js",
+  "name": "ledger-cosmos-js",
   "version": "0.0.1",
-  "description": "Node API for Ledger Nano S - Example app",
+  "description": "Node API for Ledger Nano S - Tendermint/Cosmos App",
   "main": "./src/index.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/zondax/ledger-js"
+    "url": "https://github.com/zondax/ledger-cosmos-js"
   },
   "keywords": [
     "Ledger",
     "Javascript",
-    "Example App"
+    "Tendermint",
+    "Cosmos"
   ],
   "author": "ZondaX GmbH",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/zondax/ledger-js/issues"
+    "url": "https://github.com/zondax/ledger-cosmos-js/issues"
   },
-  "homepage": "https://github.com/zondax/ledger-js",
+  "homepage": "https://github.com/zondax/ledger-cosmos-js",
   "dependencies": {
     "chai": "^4.1.2",
     "node-hid": "0.6.0",
