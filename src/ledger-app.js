@@ -18,16 +18,17 @@
 
 'use strict';
 
-var Q = require('q');
-var utils = require('./utils');
+let Q = require('q');
 
-var LedgerApp = function (comm) {
+let LedgerApp = function (comm) {
     this.comm = comm;
     this.comm.setScrambleKey('CSM');
 };
 
 const CLA = 0x55;
 const INS_GET_VERSION = 0x00;
+const INS_PUBLIC_KEY_SECP256K1 = 0x01;
+const INS_SIGN_SECP256K1 = 0x02;
 
 function serialize(CLA, INS, p1 = 0, p2 = 0, data = null) {
     let size = 5;
@@ -53,6 +54,46 @@ function serialize(CLA, INS, p1 = 0, p2 = 0, data = null) {
     return buffer;
 }
 
+function errorMessage(error_code) {
+    switch (error_code) {
+        case 14:
+            return "Timeout";
+        case 0x9000:
+            return "No errors";
+        case 0x9001:
+            return "Device is busy";
+        case 0x6400:
+            return "Execution Error";
+        case 0x6700:
+            return "Wrong Length";
+        case 0x6982:
+            return "Empty Buffer";
+        case 0x6983:
+            return "Output buffer too small";
+        case 0x6984:
+            return "Data is invalid";
+        case 0x6985:
+            return "Conditions not satisfied";
+        case 0x6986:
+            return "Command not allowed";
+        case 0x6A80:
+            return "Bad key handle";
+        case 0x6B00:
+            return "Invalid P1/P2";
+        case 0x6D00:
+            return "Instruction not supported";
+        case 0x6E00:
+            return "CLA not supported";
+        case 0x6F00:
+            return "Unknown error";
+        case 0x6F01:
+            return "Sign/verify error";
+        default:
+            return "Unknown error code";
+    }
+}
+
+
 LedgerApp.prototype.get_version = function () {
     var buffer = serialize(CLA, INS_GET_VERSION, 0, 0);
 
@@ -61,11 +102,70 @@ LedgerApp.prototype.get_version = function () {
             var result = {};
             apduResponse = Buffer.from(apduResponse, 'hex');
             let error_code_data = apduResponse.slice(-2);
+
             result["test_mode"] = apduResponse[0] !== 0;
             result["major"] = apduResponse[1];
             result["minor"] = apduResponse[2];
             result["patch"] = apduResponse[3];
+
             result["return_code"] = error_code_data[0] * 256 + error_code_data[1];
+            result["error_message"] = errorMessage(result["return_code"]);
+            return result;
+        },
+        function (response) {
+            let result = {};
+            // Unfortunately, ledger returns an string!! :(
+            result["return_code"] = parseInt(response.slice(-4), 16);
+            result["error_message"] = errorMessage(result["return_code"]);
+            return result;
+        });
+};
+
+function serialize_path(path) {
+    if (path == null || path.length < 3) {
+        throw new Error("Invalid path.")
+    }
+    if (path.length > 10) {
+        throw new Error("Invalid path. Length should be <= 10")
+    }
+    let buf = Buffer.alloc(1 + 4 * path.length);
+    buf.writeUInt8(path.length);
+    for (let i = 0; i < path.length; i++) {
+        let v = path[i];
+        if (i < 3) {
+            v |= 0x80000000;    // Harden
+        }
+        buf.writeInt32LE(v, 1 + i * 4);
+    }
+    return buf;
+};
+
+
+LedgerApp.prototype.publicKey = function (path) {
+    var buffer = serialize(CLA, INS_PUBLIC_KEY_SECP256K1, 0, 0);
+    buffer = Buffer.concat([buffer, serialize_path(path)]);
+
+    return this.comm.exchange(buffer.toString('hex'), [0x9000]).then(
+        function (apduResponse) {
+            var result = {};
+            apduResponse = Buffer.from(apduResponse, 'hex');
+            let error_code_data = apduResponse.slice(-2);
+
+            result["pk"] = Buffer.from(apduResponse.slice(3, 3 + 65));
+            result["return_code"] = error_code_data[0] * 256 + error_code_data[1];
+            result["error_message"] = errorMessage(result["return_code"]);
+
+            return result;
+        },
+        function (response) {
+            let result = {};
+            // Unfortunately, ledger returns an string!! :(
+            result["return_code"] = parseInt(response.slice(-4), 16);
+            result["error_message"] = errorMessage(result["return_code"]);
+            return result;
+        });
+};
+
             return result;
         });
 };

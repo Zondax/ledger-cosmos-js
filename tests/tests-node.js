@@ -24,9 +24,10 @@ comm = ledger.comm_node;
 browser = false;
 
 const TIMEOUT = 1000;
-const EXPECTED_MAJOR = 0;
-const EXPECTED_MINOR = 1;
-const EXPECTED_PATCH = 1;
+const LONG_TIMEOUT = 15000;
+const EXPECTED_MAJOR = 1;
+const EXPECTED_MINOR = 0;
+const EXPECTED_PATCH = 0;
 
 describe('get_version', function () {
     let response;
@@ -57,11 +58,35 @@ describe('get_version', function () {
         expect(response).to.have.a.property('patch');
     });
     it('test_mode is enabled', function () {
-        expect(response.test_mode).to.be.true;
+        expect(response.test_mode).to.be.false;
     });
     it('app has matching version', function () {
         expect(response.major).to.equal(EXPECTED_MAJOR);
         expect(response.minor).to.equal(EXPECTED_MINOR);
         expect(response.patch).to.equal(EXPECTED_PATCH);
+    });
+});
+
+describe('get_pk', function () {
+    let response;
+    // call API
+    before(function () {
+        return comm.create_async(TIMEOUT, true).then(
+            function (comm) {
+                let app = new ledger.App(comm);
+
+                let path = [44, 118, 0, 0, 0];           // Derivation path. First 3 items are automatically hardened!
+                return app.publicKey(path).then(function (result) {
+                    response = result;
+                    console.log(response);
+                });
+
+            });
+    });
+    it('return_code is 0x9000', function () {
+        expect(response.return_code).to.equal(0x9000);
+    });
+    it('has property pk', function () {
+        expect(response).to.have.a.property('pk');
     });
 });
