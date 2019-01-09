@@ -24,10 +24,10 @@ comm = ledger.comm_node;
 browser = false;
 
 const TIMEOUT = 1000;
-const LONG_TIMEOUT = 15000;
+const LONG_TIMEOUT = 45000;
 const EXPECTED_MAJOR = 1;
 const EXPECTED_MINOR = 0;
-const EXPECTED_PATCH = 0;
+const EXPECTED_PATCH = 1;
 
 describe('get_version', function () {
     let response;
@@ -57,7 +57,7 @@ describe('get_version', function () {
     it('has property patch', function () {
         expect(response).to.have.a.property('patch');
     });
-    it('test_mode is enabled', function () {
+    it('test_mode is disabled', function () {
         expect(response.test_mode).to.be.false;
     });
     it('app has matching version', function () {
@@ -90,3 +90,113 @@ describe('get_pk', function () {
         expect(response).to.have.a.property('pk');
     });
 });
+
+describe('sign_get_chunks', function () {
+    let chunks;
+
+    // call API
+    before(function () {
+        return comm.create_async(TIMEOUT, true).then(
+            function (comm) {
+                let app = new ledger.App(comm);
+                let path = [44, 118, 0, 0, 0];           // Derivation path. First 3 items are automatically hardened!
+                let message = `{"account_number": 1,"chain_id": "some_chain","fee": {"amount": [{"amount": 10, "denom": "DEN"}],"gas": 5},"memo": "MEMO","msgs": ["SOMETHING"],"sequence": 3}`;
+
+                chunks = app.sign_get_chunks(path, message);
+            });
+    });
+    it('number of chunks 2', function () {
+        expect(chunks.length).to.equal(2);
+    });
+    it('chunk 1 is derivation path', function () {
+        expect(chunks[0].length).to.equal(1 + 5 * 4);
+    });
+    it('chunk 2 is message', function () {
+        expect(chunks[1].length).to.equal(158);
+    });
+});
+
+describe('sign_get_chunks_big', function () {
+    let chunks;
+
+    // call API
+    before(function () {
+        return comm.create_async(TIMEOUT, true).then(
+            function (comm) {
+                let app = new ledger.App(comm);
+                let path = [44, 118, 0, 0, 0];           // Derivation path. First 3 items are automatically hardened!
+                let message = Buffer.alloc(1234);
+
+                chunks = app.sign_get_chunks(path, message);
+            });
+    });
+    it('number of chunks 6', function () {
+        expect(chunks.length).to.equal(6);
+    });
+    it('chunk 1 is derivation path', function () {
+        expect(chunks[0].length).to.equal(1 + 5 * 4);
+    });
+    it('chunk 2 is message', function () {
+        expect(chunks[1].length).to.equal(250);
+    });
+    it('chunk 3 is message', function () {
+        expect(chunks[2].length).to.equal(250);
+    });
+    it('chunk 4 is message', function () {
+        expect(chunks[3].length).to.equal(250);
+    });
+    it('chunk 5 is message', function () {
+        expect(chunks[4].length).to.equal(250);
+    });
+    it('chunk 6 is message', function () {
+        expect(chunks[5].length).to.equal(234);
+    });
+});
+
+describe('sign_send_chunk', function () {
+    let response;
+
+    // call API
+    before(function () {
+        return comm.create_async(TIMEOUT, true).then(
+            function (comm) {
+                let app = new ledger.App(comm);
+                let path = [44, 118, 0, 0, 0];           // Derivation path. First 3 items are automatically hardened!
+                let message = `{"account_number": 1,"chain_id": "some_chain","fee": {"amount": [{"amount": 10, "denom": "DEN"}],"gas": 5},"memo": "MEMO","msgs": ["SOMETHING"],"sequence": 3}`;
+                let chunks = app.sign_get_chunks(path, message);
+
+                app.sign_send_chunk(1,2, chunks[0]).then(function (result) {
+                    response = result;
+                    console.log(response);
+                });
+            });
+    });
+    it('return_code is 0x9000', function () {
+        expect(response.return_code).to.equal(0x9000);
+    });
+});
+
+describe('sign', function () {
+    let response;
+
+    // call API
+    before(function () {
+        this.timeout(LONG_TIMEOUT);
+        return comm.create_async(LONG_TIMEOUT, true).then(
+            async function (comm) {
+                let app = new ledger.App(comm);
+                let path = [44, 118, 0, 0, 0];           // Derivation path. First 3 items are automatically hardened!
+                let message = `{"account_number":1,"chain_id":"some_chain","fee":{"amount":[{"amount":10,"denom":"DEN"}],"gas":5},"memo":"MEMO","msgs":["SOMETHING"],"sequence":3}`;
+
+                response = await app.sign(path, message);
+                console.log(response);
+            });
+    });
+    it('return_code is 0x9000', function () {
+        expect(response.return_code).to.equal(0x9000);
+    });
+    it('return_code is 0x9000', function () {
+        expect(response.signature.length).to.equal(71);
+    });
+});
+

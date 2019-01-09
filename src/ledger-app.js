@@ -30,6 +30,8 @@ const INS_GET_VERSION = 0x00;
 const INS_PUBLIC_KEY_SECP256K1 = 0x01;
 const INS_SIGN_SECP256K1 = 0x02;
 
+const CHUNK_SIZE = 250;
+
 function serialize(CLA, INS, p1 = 0, p2 = 0, data = null) {
     let size = 5;
     if (data != null) {
@@ -140,10 +142,8 @@ function serialize_path(path) {
     return buf;
 };
 
-
 LedgerApp.prototype.publicKey = function (path) {
-    var buffer = serialize(CLA, INS_PUBLIC_KEY_SECP256K1, 0, 0);
-    buffer = Buffer.concat([buffer, serialize_path(path)]);
+    var buffer = serialize(CLA, INS_PUBLIC_KEY_SECP256K1, 0, 0, serialize_path(path));
 
     return this.comm.exchange(buffer.toString('hex'), [0x9000]).then(
         function (apduResponse) {
@@ -166,8 +166,82 @@ LedgerApp.prototype.publicKey = function (path) {
         });
 };
 
+LedgerApp.prototype.sign_get_chunks = function (path, message) {
+    let chunks = [];
+    chunks.push(serialize_path(path));
+
+    let buffer = Buffer.from(message);
+
+    for (let i = 0; i < buffer.length; i += CHUNK_SIZE) {
+        let end = i + CHUNK_SIZE;
+        if (i > buffer.length) {
+            end = buffer.length;
+        }
+        chunks.push(buffer.slice(i, end));
+    }
+
+    console.log(buffer.length);
+    console.log(buffer);
+
+    return chunks;
+};
+
+LedgerApp.prototype.sign_send_chunk = function (chunk_idx, chunk_num, chunk) {
+    var buffer = serialize(CLA, INS_SIGN_SECP256K1, chunk_idx, chunk_num, chunk);
+
+    return this.comm.exchange(buffer.toString('hex'), [0x9000]).then(
+        function (apduResponse) {
+            var result = {};
+            apduResponse = Buffer.from(apduResponse, 'hex');
+            let error_code_data = apduResponse.slice(-2);
+
+            result["return_code"] = error_code_data[0] * 256 + error_code_data[1];
+            result["error_message"] = errorMessage(result["return_code"]);
+
+            result["signature"] = null;
+            if (apduResponse.length > 2) {
+                result["signature"] = apduResponse.slice(0, apduResponse.length - 2);
+            }
+
+            return result;
+        },
+        function (response) {
+            let result = {};
+            // Unfortunately, ledger returns an string!! :(
+            result["return_code"] = parseInt(response.slice(-4), 16);
+            result["error_message"] = errorMessage(result["return_code"]);
             return result;
         });
+};
+
+LedgerApp.prototype.sign = async function (path, message) {
+    let myApp = this;
+    let chunks = myApp.sign_get_chunks(path, message);
+
+    return myApp.sign_send_chunk(1, chunks.length, chunks[0]).then(async function (result) {
+        let response = {};
+
+        response["return_code"] = result.return_code;
+        response["error_message"] = result.error_message;
+        response["signature"] = null;
+
+        if (result.return_code === 0x9000) {
+            for (let i = 1; i < chunks.length; i++) {
+                console.log(1 + i, chunks.length);
+                result = await myApp.sign_send_chunk(1 + i, chunks.length, chunks[i]);
+                response["return_code"] = result.return_code;
+                response["error_message"] = result.error_message;
+                if (result.return_code !== 0x9000) {
+                    break;
+                }
+            }
+            response["return_code"] = result.return_code;
+            response["error_message"] = result.error_message;
+            response["signature"] = result.signature;
+        }
+
+        return response;
+    })
 };
 
 module.exports = LedgerApp;
