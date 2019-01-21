@@ -200,3 +200,27 @@ describe('sign', function () {
     });
 });
 
+describe('sign_2', function () {
+    let response;
+
+    // call API
+    before(function () {
+        this.timeout(LONG_TIMEOUT);
+        return comm.create_async(LONG_TIMEOUT, true).then(
+            async function (comm) {
+                let app = new ledger.App(comm);
+                let path = [44, 118, 0, 0, 0];           // Derivation path. First 3 items are automatically hardened!
+                let message = `{"account_number":"2","chain_id":"local-testnet","fee":{"amount":[],"gas":"500000"},"memo":"","msgs":[{"description":"test","initial_deposit":[{"amount":"1","denom":"stake"}],"proposal_type":"Text","proposer":"cosmos13xzqf9re68eeqfjaxhqh6g5rqfvhzpfkm8tuhh","title":"test"}],"sequence":"0"}`;
+
+                response = await app.sign(path, message);
+                console.log(response);
+            });
+    });
+    it('return_code is 0x9000', function () {
+        expect(response.return_code).to.equal(0x9000);
+    });
+    it('return_code is 0x9000', function () {
+        expect(response.signature.length).to.equal(71);
+    });
+});
+
