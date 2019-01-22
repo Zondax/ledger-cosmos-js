@@ -89,6 +89,12 @@ describe('get_pk', function () {
     it('has property pk', function () {
         expect(response).to.have.a.property('pk');
     });
+    it('has no errors', function () {
+        expect(response.error_message).to.equal(`No errors`);
+    });
+    it('has 65 bytes', function () {
+        expect(response).to.have.lengthOf(65);
+    });
 });
 
 describe('sign_get_chunks', function () {
@@ -195,6 +201,9 @@ describe('sign', function () {
     it('return_code is 0x9000', function () {
         expect(response.return_code).to.equal(0x9000);
     });
+    it('has no errors', function () {
+        expect(response.error_message).to.equal(`No errors`);
+    });
     it('return_code is 0x9000', function () {
         expect(response.signature.length).to.equal(71);
     });
@@ -219,7 +228,10 @@ describe('sign_2', function () {
     it('return_code is 0x9000', function () {
         expect(response.return_code).to.equal(0x9000);
     });
-    it('return_code is 0x9000', function () {
+    it('has no errors', function () {
+        expect(response.error_message).to.equal(`No errors`);
+    });
+    it('has 71 bytes', function () {
         expect(response.signature.length).to.equal(71);
     });
 });
