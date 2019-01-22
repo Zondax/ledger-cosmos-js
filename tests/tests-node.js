@@ -90,14 +90,17 @@ describe('get_pk', function () {
     it('has property pk', function () {
         expect(response).to.have.a.property('pk');
     });
-    it('pk is 65 bytes', function () {
-        expect(response.pk.length).to.equal(65);
+    it('has no errors', function () {
+        expect(response.error_message).to.equal(`No errors`);
+    });
+    it('has 65 bytes', function () {
+        expect(response.pk).to.have.lengthOf(65);
     });
     it('has property compressed_pk', function () {
         expect(response).to.have.a.property('compressed_pk');
     });
-    it('compressed_pk is 65 bytes', function () {
-        expect(response.compressed_pk.length).to.equal(33);
+    it('compressed_pk is 33 bytes', function () {
+        expect(response.compressed_pk).to.have.lengthOf(33);
     });
 });
 
@@ -251,8 +254,11 @@ describe('sign', function () {
     it('return_code is 0x9000', function () {
         expect(response.return_code).to.equal(0x9000);
     });
-    it('return_code is 0x9000', function () {
-        expect(response.signature.length).to.equal(71);
+    it('has no errors', function () {
+        expect(response.error_message).to.equal(`No errors`);
+    });
+    it('signature has 71 bytes', function () {
+        expect(response.signature).to.have.lengthOf(71);
     });
 });
 
@@ -275,8 +281,11 @@ describe('sign_2', function () {
     it('return_code is 0x9000', function () {
         expect(response.return_code).to.equal(0x9000);
     });
-    it('return_code is 0x9000', function () {
-        expect(response.signature.length).to.equal(71);
+    it('has no errors', function () {
+        expect(response.error_message).to.equal(`No errors`);
+    });
+    it('signature has 71 bytes', function () {
+        expect(response.signature).to.have.lengthOf(71);
     });
 });
 
