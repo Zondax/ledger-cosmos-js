@@ -151,7 +151,7 @@ LedgerApp.prototype.publicKey = function (path) {
             apduResponse = Buffer.from(apduResponse, 'hex');
             let error_code_data = apduResponse.slice(-2);
 
-            result["pk"] = Buffer.from(apduResponse.slice(3, 3 + 65));
+            result["pk"] = Buffer.from(apduResponse.slice(0, 65));
             result["return_code"] = error_code_data[0] * 256 + error_code_data[1];
             result["error_message"] = errorMessage(result["return_code"]);
 
