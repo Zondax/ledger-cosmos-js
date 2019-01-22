@@ -93,7 +93,7 @@ describe('get_pk', function () {
         expect(response.error_message).to.equal(`No errors`);
     });
     it('has 65 bytes', function () {
-        expect(response).to.have.lengthOf(65);
+        expect(response.pk).to.have.lengthOf(65);
     });
 });
 
