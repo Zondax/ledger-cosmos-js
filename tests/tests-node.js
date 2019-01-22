@@ -71,7 +71,8 @@ describe('get_pk', function () {
     let response;
     // call API
     before(function () {
-        return comm.create_async(TIMEOUT, true).then(
+        this.timeout(LONG_TIMEOUT);
+        return comm.create_async(LONG_TIMEOUT, true).then(
             function (comm) {
                 let app = new ledger.App(comm);
 
@@ -89,6 +90,61 @@ describe('get_pk', function () {
     it('has property pk', function () {
         expect(response).to.have.a.property('pk');
     });
+    it('pk is 65 bytes', function () {
+        expect(response.pk.length).to.equal(65);
+    });
+    it('has property compressed_pk', function () {
+        expect(response).to.have.a.property('compressed_pk');
+    });
+    it('compressed_pk is 65 bytes', function () {
+        expect(response.compressed_pk.length).to.equal(33);
+    });
+});
+
+describe('create ledger object', function () {
+    exception_raised = false;
+    try {
+        let app = new ledger.App(null);
+    }
+    catch(e) {
+        it('raises an exception', function () {
+            expect(e.message).to.equal("comm object was not set or invalid");
+        });
+        exception_raised = true;
+    }
+    it('raises an exception', function () {
+        expect(exception_raised).to.be.true;
+    });
+});
+
+
+describe('compress_pk', function () {
+    let response;
+
+    // Use a fake comm object
+    let comm = {'setScrambleKey' : function(dummy){}};
+
+    let app = new ledger.App(comm);
+
+    let some_pk = Buffer.from([4, 228, 114, 95, 12, 248, 233, 150, 121, 120, 108, 215, 35, 230, 147, 188,
+        25, 67, 15, 209, 28, 190, 133, 163, 176, 205, 91, 131, 112, 190, 111, 120, 229, 35, 85, 207,
+        82, 109, 65, 22, 237, 67, 55, 19, 171, 79, 225, 208, 53, 24, 254, 23, 97, 58, 0, 18, 18, 212,
+        152, 188, 87, 18, 47, 249, 17]);
+
+    compressed_pk = app.compressPublicKey(some_pk);
+
+    it('decompressed_pk is 65 bytes', function () {
+        expect(some_pk.length).to.equal(65);
+    });
+
+    it('compressed_pk is 33 bytes', function () {
+        expect(compressed_pk.length).to.equal(33);
+    });
+
+    it('compressed_pk[0] is 33 bytes', function () {
+        expect(compressed_pk[0]).to.equal(3);
+    });
+
 });
 
 describe('sign_get_chunks', function () {
@@ -165,7 +221,7 @@ describe('sign_send_chunk', function () {
                 let message = `{"account_number": 1,"chain_id": "some_chain","fee": {"amount": [{"amount": 10, "denom": "DEN"}],"gas": 5},"memo": "MEMO","msgs": ["SOMETHING"],"sequence": 3}`;
                 let chunks = app.sign_get_chunks(path, message);
 
-                app.sign_send_chunk(1,2, chunks[0]).then(function (result) {
+                app.sign_send_chunk(1, 2, chunks[0]).then(function (result) {
                     response = result;
                     console.log(response);
                 });

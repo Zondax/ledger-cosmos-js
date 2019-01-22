@@ -22,6 +22,9 @@ let Q = require('q');
 
 let LedgerApp = function (comm) {
     this.comm = comm;
+    if (!this.comm) {
+        throw new Error("comm object was not set or invalid")
+    }
     this.comm.setScrambleKey('CSM');
 };
 
@@ -142,6 +145,21 @@ function serialize_path(path) {
     return buf;
 };
 
+function compressPublicKey(publicKey) {
+    if (publicKey.length !== 65) {
+        throw new Error('decompressed public key length should be 65 bytes');
+    }
+
+    const y = publicKey.slice(33, 65);
+    const z = new Buffer.from([2 + (y[y.length - 1] & 1)]);
+
+    return Buffer.concat([ z, publicKey.slice(0, 32) ]);
+}
+
+LedgerApp.prototype.compressPublicKey = function (pk) {
+    return compressPublicKey(pk);
+};
+
 LedgerApp.prototype.publicKey = function (path) {
     var buffer = serialize(CLA, INS_PUBLIC_KEY_SECP256K1, 0, 0, serialize_path(path));
 
@@ -150,8 +168,10 @@ LedgerApp.prototype.publicKey = function (path) {
             var result = {};
             apduResponse = Buffer.from(apduResponse, 'hex');
             let error_code_data = apduResponse.slice(-2);
+            let pk = Buffer.from(apduResponse.slice(0, 65));
 
-            result["pk"] = Buffer.from(apduResponse.slice(0, 65));
+            result["pk"] = pk;
+            result["compressed_pk"] = compressPublicKey(pk);
             result["return_code"] = error_code_data[0] * 256 + error_code_data[1];
             result["error_message"] = errorMessage(result["return_code"]);
 
