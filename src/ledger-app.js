@@ -180,9 +180,6 @@ LedgerApp.prototype.sign_get_chunks = function (path, message) {
         chunks.push(buffer.slice(i, end));
     }
 
-    console.log(buffer.length);
-    console.log(buffer);
-
     return chunks;
 };
 
@@ -227,7 +224,6 @@ LedgerApp.prototype.sign = async function (path, message) {
 
         if (result.return_code === 0x9000) {
             for (let i = 1; i < chunks.length; i++) {
-                console.log(1 + i, chunks.length);
                 result = await myApp.sign_send_chunk(1 + i, chunks.length, chunks[i]);
                 response["return_code"] = result.return_code;
                 response["error_message"] = result.error_message;
