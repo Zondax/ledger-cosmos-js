@@ -27,7 +27,8 @@
   },
   "devDependencies": {
     "browserify": "^16.2.3",
-    "uglify-js": "^3.4.9"
+    "uglify-js": "^3.4.9",
+    "secp256k1": "^3.6.1"
   },
   "scripts": {
     "browserify": "browserify --im --s=ledger -o browser/ledger.js src/index-browserify.js; cp src/chrome-u2f-api.js browser/",

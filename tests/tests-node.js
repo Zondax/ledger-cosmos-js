@@ -18,6 +18,9 @@
 var assert = require('assert');
 var expect = require('chai').expect;
 var Q = require('q');
+//const secp256k1 = require('secp256k1');
+const secp256k1 = require('secp256k1/elliptic');
+const crypto = require('crypto');
 
 ledger = require('../src');
 comm = ledger.comm_node;
@@ -102,6 +105,10 @@ describe('get_pk', function () {
     it('compressed_pk is 33 bytes', function () {
         expect(response.compressed_pk).to.have.lengthOf(33);
     });
+    it('pk and compressed_pk match', function () {
+        let expected_compressed_pk = secp256k1.publicKeyConvert(response.pk, true);
+        expect(response.compressed_pk.toString('hex')).to.equal(expected_compressed_pk.toString('hex'));
+    });
 });
 
 describe('create ledger object', function () {
@@ -147,7 +154,10 @@ describe('compress_pk', function () {
     it('compressed_pk[0] is 33 bytes', function () {
         expect(compressed_pk[0]).to.equal(3);
     });
-
+    it('pk and compressed_pk match', function () {
+        let expected_compressed_pk = secp256k1.publicKeyConvert(some_pk, true);
+        expect(compressed_pk.toString('hex')).to.equal(expected_compressed_pk.toString('hex'));
+    });
 });
 
 describe('sign_get_chunks', function () {
@@ -237,6 +247,7 @@ describe('sign_send_chunk', function () {
 
 describe('sign', function () {
     let response;
+    let message = `{"account_number":1,"chain_id":"some_chain","fee":{"amount":[{"amount":10,"denom":"DEN"}],"gas":5},"memo":"MEMO","msgs":["SOMETHING"],"sequence":3}`;
 
     // call API
     before(function () {
@@ -245,7 +256,6 @@ describe('sign', function () {
             async function (comm) {
                 let app = new ledger.App(comm);
                 let path = [44, 118, 0, 0, 0];           // Derivation path. First 3 items are automatically hardened!
-                let message = `{"account_number":1,"chain_id":"some_chain","fee":{"amount":[{"amount":10,"denom":"DEN"}],"gas":5},"memo":"MEMO","msgs":["SOMETHING"],"sequence":3}`;
 
                 response = await app.sign(path, message);
                 console.log(response);
@@ -259,6 +269,49 @@ describe('sign', function () {
     });
     it('signature has 71 bytes', function () {
         expect(response.signature).to.have.lengthOf(71);
+    });
+});
+
+describe('sign_and_verify', function () {
+    let response_sign;
+    let response_pk;
+    let message = `{"account_number":1,"chain_id":"some_chain","fee":{"amount":[{"amount":10,"denom":"DEN"}],"gas":5},"memo":"MEMO","msgs":["SOMETHING"],"sequence":3}`;
+
+    // call API
+    before(function () {
+        this.timeout(LONG_TIMEOUT);
+        return comm.create_async(LONG_TIMEOUT, true).then(
+            async function (comm) {
+                let app = new ledger.App(comm);
+                let path = [44, 118, 0, 0, 0];           // Derivation path. First 3 items are automatically hardened!
+
+                response_pk = await app.publicKey(path);
+                response_sign = await app.sign(path, message);
+
+                console.log(response_sign);
+                console.log(response_pk);
+            });
+    });
+    it('signature is valid when using non-compressed pk', function () {
+        const hash = crypto.createHash('sha256');
+        msg_hash = hash.update(message).digest();
+
+        signature_der = response_sign.signature;
+        signature =  secp256k1.signatureImport(signature_der);
+
+        signature_ok = secp256k1.verify(msg_hash, signature, response_pk.pk);
+        expect(signature_ok).to.be.true;
+    });
+
+    it('signature is valid when using compressed pk', function () {
+        const hash = crypto.createHash('sha256');
+        msg_hash = hash.update(message).digest();
+
+        signature_der = response_sign.signature;
+        signature =  secp256k1.signatureImport(signature_der);
+
+        signature_ok = secp256k1.verify(msg_hash, signature, response_pk.compressed_pk);
+        expect(signature_ok).to.be.true;
     });
 });
 
