@@ -153,7 +153,7 @@ function compressPublicKey(publicKey) {
     const y = publicKey.slice(33, 65);
     const z = new Buffer.from([2 + (y[y.length - 1] & 1)]);
 
-    return Buffer.concat([ z, publicKey.slice(0, 32) ]);
+    return Buffer.concat([ z, publicKey.slice(1, 33) ]);
 }
 
 LedgerApp.prototype.compressPublicKey = function (pk) {
