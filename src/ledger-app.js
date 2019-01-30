@@ -206,7 +206,7 @@ LedgerApp.prototype.sign_get_chunks = function (path, message) {
 LedgerApp.prototype.sign_send_chunk = function (chunk_idx, chunk_num, chunk) {
     var buffer = serialize(CLA, INS_SIGN_SECP256K1, chunk_idx, chunk_num, chunk);
 
-    return this.comm.exchange(buffer.toString('hex'), [0x9000]).then(
+    return this.comm.exchange(buffer.toString('hex'), [0x9000, 0x6A80]).then(
         function (apduResponse) {
             var result = {};
             apduResponse = Buffer.from(apduResponse, 'hex');
@@ -214,6 +214,10 @@ LedgerApp.prototype.sign_send_chunk = function (chunk_idx, chunk_num, chunk) {
 
             result["return_code"] = error_code_data[0] * 256 + error_code_data[1];
             result["error_message"] = errorMessage(result["return_code"]);
+
+            if (result.return_code === 0x6A80) {
+                result["error_message"] = apduResponse.slice(0, apduResponse.length - 2).toString('ascii');
+            }
 
             result["signature"] = null;
             if (apduResponse.length > 2) {
