@@ -342,3 +342,27 @@ describe('sign_2', function () {
     });
 });
 
+describe('sign_parsing_error_message', function () {
+    let response;
+
+    // call API
+    before(function () {
+        this.timeout(LONG_TIMEOUT);
+        return comm.create_async(LONG_TIMEOUT, true).then(
+            async function (comm) {
+                let app = new ledger.App(comm);
+                let path = [44, 118, 0, 0, 0];           // Derivation path. First 3 items are automatically hardened!
+                let message = `{"chain_id":"local-testnet","fee":{"amount":[],"gas":"500000"},"memo":"","msgs":[{"delegator_addr":"cosmos1qpd4xgtqmxyf9ktjh757nkdfnzpnkamny3cpzv","validator_addr":"cosmosvaloper1zyp0axz2t55lxkmgrvg4vpey2rf4ratcsud07t","value":{"amount":"1","denom":"stake"}}],"sequence":"0"}`;
+
+                response = await app.sign(path, message);
+                console.log(response);
+            });
+    });
+    it('return_code is 0x9000', function () {
+        expect(response.return_code).to.equal(0x6A80);
+    });
+    it('has no errors', function () {
+        expect(response.error_message).to.equal(`Missing account_number`);
+    });
+});
+
