@@ -29,8 +29,8 @@ browser = false;
 const TIMEOUT = 1000;
 const LONG_TIMEOUT = 45000;
 const EXPECTED_MAJOR = 1;
-const EXPECTED_MINOR = 0;
-const EXPECTED_PATCH = 1;
+const EXPECTED_MINOR = 1;
+const EXPECTED_PATCH = 0;
 
 describe('get_version', function () {
     let response;
@@ -126,7 +126,6 @@ describe('create ledger object', function () {
         expect(exception_raised).to.be.true;
     });
 });
-
 
 describe('compress_pk', function () {
     let response;
@@ -294,23 +293,23 @@ describe('sign_and_verify', function () {
     });
     it('signature is valid when using non-compressed pk', function () {
         const hash = crypto.createHash('sha256');
-        msg_hash = hash.update(message).digest();
+        let msg_hash = hash.update(message).digest();
 
-        signature_der = response_sign.signature;
-        signature =  secp256k1.signatureImport(signature_der);
+        let signature_der = response_sign.signature;
+        let signature = secp256k1.signatureImport(signature_der);
 
-        signature_ok = secp256k1.verify(msg_hash, signature, response_pk.pk);
+        let signature_ok = secp256k1.verify(msg_hash, signature, response_pk.pk);
         expect(signature_ok).to.be.true;
     });
 
     it('signature is valid when using compressed pk', function () {
         const hash = crypto.createHash('sha256');
-        msg_hash = hash.update(message).digest();
+        let msg_hash = hash.update(message).digest();
 
-        signature_der = response_sign.signature;
-        signature =  secp256k1.signatureImport(signature_der);
+        let signature_der = response_sign.signature;
+        let signature = secp256k1.signatureImport(signature_der);
 
-        signature_ok = secp256k1.verify(msg_hash, signature, response_pk.compressed_pk);
+        let signature_ok = secp256k1.verify(msg_hash, signature, response_pk.compressed_pk);
         expect(signature_ok).to.be.true;
     });
 });
@@ -366,3 +365,39 @@ describe('sign_parsing_error_message', function () {
     });
 });
 
+describe('serialize_hrp cosmos', function () {
+    // Use a fake comm object
+    let comm = {'setScrambleKey' : function(dummy){}};
+
+    let app = new ledger.App(comm);
+
+    let hrp = app.serializeHRP("cosmos");
+    it('length is 7', function () {
+        expect(hrp.length).to.equal(7);
+    });
+    it('length is in byte 0 and equal 6', function () {
+        expect(hrp[0]).to.equal(6);
+    });
+});
+
+describe('showAddress', function () {
+    let response;
+    // call API
+    before(function () {
+        this.timeout(LONG_TIMEOUT);
+        return comm.create_async(LONG_TIMEOUT, true).then(
+            function (comm) {
+                let app = new ledger.App(comm);
+
+                let path = [44, 118, 5, 0, 3];
+                return app.showAddress("cosmos", path).then(function (result) {
+                    response = result;
+                    console.log(response);
+                });
+
+            });
+    });
+    it('return_code is 0x9000', function () {
+        expect(response.return_code).to.equal(0x9000);
+    });
+});

@@ -32,6 +32,7 @@ const CLA = 0x55;
 const INS_GET_VERSION = 0x00;
 const INS_PUBLIC_KEY_SECP256K1 = 0x01;
 const INS_SIGN_SECP256K1 = 0x02;
+const INS_SHOW_ADDR_SECP256K1 = 0x03;
 
 const CHUNK_SIZE = 250;
 
@@ -98,7 +99,6 @@ function errorMessage(error_code) {
     }
 }
 
-
 LedgerApp.prototype.get_version = function () {
     var buffer = serialize(CLA, INS_GET_VERSION, 0, 0);
 
@@ -126,6 +126,16 @@ LedgerApp.prototype.get_version = function () {
         });
 };
 
+function serialize_hrp(hrp) {
+    if (hrp == null || hrp.length < 3 || hrp.length > 83) {
+        throw new Error("Invalid HRP")
+    }
+    let buf = Buffer.alloc(1 + hrp.length);
+    buf.writeUInt8(hrp.length, 0);
+    buf.write(hrp, 1);
+    return buf;
+}
+
 function serialize_path(path) {
     if (path == null || path.length < 3) {
         throw new Error("Invalid path.")
@@ -134,7 +144,7 @@ function serialize_path(path) {
         throw new Error("Invalid path. Length should be <= 10")
     }
     let buf = Buffer.alloc(1 + 4 * path.length);
-    buf.writeUInt8(path.length);
+    buf.writeUInt8(path.length, 0);
     for (let i = 0; i < path.length; i++) {
         let v = path[i];
         if (i < 3) {
@@ -143,7 +153,7 @@ function serialize_path(path) {
         buf.writeInt32LE(v, 1 + i * 4);
     }
     return buf;
-};
+}
 
 function compressPublicKey(publicKey) {
     if (publicKey.length !== 65) {
@@ -158,6 +168,10 @@ function compressPublicKey(publicKey) {
 
 LedgerApp.prototype.compressPublicKey = function (pk) {
     return compressPublicKey(pk);
+};
+
+LedgerApp.prototype.serializeHRP = function (hrp) {
+    return serialize_hrp(hrp);
 };
 
 LedgerApp.prototype.publicKey = function (path) {
@@ -262,6 +276,33 @@ LedgerApp.prototype.sign = async function (path, message) {
 
         return response;
     })
+};
+
+LedgerApp.prototype.showAddress = function (hrp, path) {
+    let data = Buffer.concat([serialize_hrp(hrp), serialize_path(path)]);
+    let buffer = serialize(CLA, INS_SHOW_ADDR_SECP256K1, 0, 0, data);
+
+    return this.comm.exchange(buffer.toString('hex'), [0x9000, 0x6A80]).then(
+        function (apduResponse) {
+            let result = {};
+            apduResponse = Buffer.from(apduResponse, 'hex');
+            let error_code_data = apduResponse.slice(-2);
+
+            result["return_code"] = error_code_data[0] * 256 + error_code_data[1];
+            result["error_message"] = errorMessage(result["return_code"]);
+
+            if (result.return_code === 0x6A80) {
+                result["error_message"] = apduResponse.slice(0, apduResponse.length - 2).toString('ascii');
+            }
+            return result;
+        },
+        function (response) {
+            let result = {};
+            // Unfortunately, ledger returns an string!! :(
+            result["return_code"] = parseInt(response.slice(-4), 16);
+            result["error_message"] = errorMessage(result["return_code"]);
+            return result;
+        });
 };
 
 module.exports = LedgerApp;
