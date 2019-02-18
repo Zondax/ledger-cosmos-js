@@ -18,7 +18,7 @@ let assert = require('assert');
 let expect = require('chai').expect;
 let Q = require('q');
 
-const TIMEOUT = 1000;
+const TIMEOUT = 2;
 
 browser = true;
 comm = ledger.comm_u2f;

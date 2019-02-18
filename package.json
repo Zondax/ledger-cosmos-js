@@ -31,10 +31,10 @@
     "secp256k1": "^3.6.1"
   },
   "scripts": {
-    "browserify": "browserify --im --s=ledger -o browser/ledger.js src/index-browserify.js; cp src/chrome-u2f-api.js browser/",
-    "test-browserify": "browserify --im --standalone runExample -o tests/browser/test-bundle.js tests/tests-browser.js",
-    "test": "mocha tests/tests-node.js",
-    "clean": "rm -f browser/*.js"
+    "browserify": "browserify --im --s=ledger -o browser/ledger.js src/index-browserify.js; cp src/chrome-u2f-api.js browser/; cp browser/*.js tests/browser/",
+    "browserify-test": "browserify --standalone runExample -o tests/browser/test-bundle.js tests/tests-browser.js",
+    "test-node": "mocha tests/tests-node.js",
+    "clean": "rm -f browser/*.js; rm -f tests/browser/*.js;"
   },
   "browser": {
     "node-hid": false
