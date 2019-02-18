@@ -65,3 +65,9 @@ typings/
 browser/ledger\.js
 
 browser/chrome-u2f-api\.js
+
+tests/browser/chrome-u2f-api\.js
+
+tests/browser/ledger\.js
+
+tests/browser/test-bundle\.js

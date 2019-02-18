@@ -62,6 +62,16 @@ function serialize(CLA, INS, p1 = 0, p2 = 0, data = null) {
 
 function errorMessage(error_code) {
     switch (error_code) {
+        case 1:
+            return "U2F: Unknown";
+        case 2:
+            return "U2F: Bad request";
+        case 3:
+            return "U2F: Configuration unsupported";
+        case 4:
+            return "U2F: Device Ineligible";
+        case 5:
+            return "U2F: Timeout";
         case 14:
             return "Timeout";
         case 0x9000:
@@ -89,7 +99,7 @@ function errorMessage(error_code) {
         case 0x6D00:
             return "Instruction not supported";
         case 0x6E00:
-            return "CLA not supported";
+            return "Cosmos app does not seem to be open";
         case 0x6F00:
             return "Unknown error";
         case 0x6F01:
@@ -99,8 +109,24 @@ function errorMessage(error_code) {
     }
 }
 
+function process_error_response(response) {
+    let result = {};
+
+    if (typeof response === 'string' || response instanceof String ) {
+        // Unfortunately, ledger node implementation returns an string!! :(
+        result["return_code"] = parseInt(response.slice(-4), 16);
+    } else {
+        // Handle U2F communication normally
+        result["return_code"] = response.errorCode;
+    }
+
+    result["error_message"] = errorMessage(result["return_code"]);
+
+    return result;
+}
+
 LedgerApp.prototype.get_version = function () {
-    var buffer = serialize(CLA, INS_GET_VERSION, 0, 0);
+    let buffer = serialize(CLA, INS_GET_VERSION, 0, 0);
 
     return this.comm.exchange(buffer.toString('hex'), [0x9000]).then(
         function (apduResponse) {
@@ -117,13 +143,7 @@ LedgerApp.prototype.get_version = function () {
             result["error_message"] = errorMessage(result["return_code"]);
             return result;
         },
-        function (response) {
-            let result = {};
-            // Unfortunately, ledger returns an string!! :(
-            result["return_code"] = parseInt(response.slice(-4), 16);
-            result["error_message"] = errorMessage(result["return_code"]);
-            return result;
-        });
+        process_error_response);
 };
 
 function serialize_hrp(hrp) {
@@ -191,13 +211,7 @@ LedgerApp.prototype.publicKey = function (path) {
 
             return result;
         },
-        function (response) {
-            let result = {};
-            // Unfortunately, ledger returns an string!! :(
-            result["return_code"] = parseInt(response.slice(-4), 16);
-            result["error_message"] = errorMessage(result["return_code"]);
-            return result;
-        });
+        process_error_response);
 };
 
 LedgerApp.prototype.sign_get_chunks = function (path, message) {
@@ -240,13 +254,7 @@ LedgerApp.prototype.sign_send_chunk = function (chunk_idx, chunk_num, chunk) {
 
             return result;
         },
-        function (response) {
-            let result = {};
-            // Unfortunately, ledger returns an string!! :(
-            result["return_code"] = parseInt(response.slice(-4), 16);
-            result["error_message"] = errorMessage(result["return_code"]);
-            return result;
-        });
+        process_error_response);
 };
 
 LedgerApp.prototype.sign = async function (path, message) {
@@ -296,13 +304,7 @@ LedgerApp.prototype.showAddress = function (hrp, path) {
             }
             return result;
         },
-        function (response) {
-            let result = {};
-            // Unfortunately, ledger returns an string!! :(
-            result["return_code"] = parseInt(response.slice(-4), 16);
-            result["error_message"] = errorMessage(result["return_code"]);
-            return result;
-        });
+        process_error_response);
 };
 
 module.exports = LedgerApp;
