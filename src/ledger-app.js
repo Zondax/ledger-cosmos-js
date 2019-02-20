@@ -91,7 +91,7 @@ function errorMessage(error_code) {
         case 0x6985:
             return "Conditions not satisfied";
         case 0x6986:
-            return "Command not allowed";
+            return "Transaction rejected";
         case 0x6A80:
             return "Bad key handle";
         case 0x6B00:
