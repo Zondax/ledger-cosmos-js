@@ -29,7 +29,7 @@ browser = false;
 const TIMEOUT = 1000;
 const LONG_TIMEOUT = 45000;
 const EXPECTED_MAJOR = 1;
-const EXPECTED_MINOR = 1;
+const EXPECTED_MINOR = 3;
 const EXPECTED_PATCH = 0;
 
 describe('get_version', function () {
@@ -46,6 +46,7 @@ describe('get_version', function () {
             });
     });
     it('return_code is 0x9000', function () {
+        console.log("Error code 0x%s: %s ", response.return_code.toString(16), response.error_message);
         expect(response.return_code).to.equal(0x9000);
     });
     it('has property test_mode', function () {
@@ -240,6 +241,7 @@ describe('sign_send_chunk', function () {
             });
     });
     it('return_code is 0x9000', function () {
+        console.log("Error code 0x%s: %s ", response.return_code.toString(16), response.error_message);
         expect(response.return_code).to.equal(0x9000);
     });
 });
@@ -261,6 +263,7 @@ describe('sign', function () {
             });
     });
     it('return_code is 0x9000', function () {
+        console.log("Error code 0x%s: %s ", response.return_code.toString(16), response.error_message);
         expect(response.return_code).to.equal(0x9000);
     });
     it('has no errors', function () {
@@ -331,6 +334,7 @@ describe('sign_2', function () {
             });
     });
     it('return_code is 0x9000', function () {
+        console.log("Error code 0x%s: %s ", response.return_code.toString(16), response.error_message);
         expect(response.return_code).to.equal(0x9000);
     });
     it('has no errors', function () {
@@ -358,6 +362,7 @@ describe('sign_parsing_error_message', function () {
             });
     });
     it('return_code is 0x9000', function () {
+        console.log("Error code 0x%s: %s ", response.return_code.toString(16), response.error_message);
         expect(response.return_code).to.equal(0x6A80);
     });
     it('has no errors', function () {
@@ -398,6 +403,55 @@ describe('showAddress', function () {
             });
     });
     it('return_code is 0x9000', function () {
+        console.log("Error code 0x%s: %s ", response.return_code.toString(16), response.error_message);
+        expect(response.return_code).to.equal(0x9000);
+    });
+});
+
+describe('getAddress', function () {
+    let response;
+    // call API
+    before(function () {
+        this.timeout(LONG_TIMEOUT);
+        return comm.create_async(LONG_TIMEOUT, true).then(
+            function (comm) {
+                let app = new ledger.App(comm);
+
+                let path = [44, 118, 5, 0, 3];
+                return app.getAddress("cosmos", path).then(function (result) {
+                    response = result;
+                    console.log(response);
+                });
+
+            });
+    });
+    it('return_code is 0x9000', function () {
+        console.log("Error code 0x%s: %s ", response.return_code.toString(16), response.error_message);
+        expect(response.return_code).to.equal(0x9000);
+    });
+});
+
+describe('appInfo', function () {
+    let response;
+    // call API
+    before(function () {
+        this.timeout(LONG_TIMEOUT);
+        return comm.create_async(LONG_TIMEOUT, true).then(
+            function (comm) {
+                let app = new ledger.App(comm);
+                return app.appInfo().then(function (result) {
+                    response = result;
+                    console.log(response);
+                });
+
+            });
+    });
+    it('return_code is 0x9000', function () {
+        console.log("Error code 0x%s: %s ", response.return_code.toString(16), response.error_message);
+        expect(response.return_code).to.equal(0x9000);
+    });
+});
+
         expect(response.return_code).to.equal(0x9000);
     });
 });
