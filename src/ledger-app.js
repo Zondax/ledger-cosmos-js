@@ -33,6 +33,7 @@ const INS_GET_VERSION = 0x00;
 const INS_PUBLIC_KEY_SECP256K1 = 0x01;
 const INS_SIGN_SECP256K1 = 0x02;
 const INS_SHOW_ADDR_SECP256K1 = 0x03;
+const INS_GET_ADDR_SECP256K1 = 0x04;
 
 const CHUNK_SIZE = 250;
 
@@ -138,6 +139,7 @@ LedgerApp.prototype.get_version = function () {
             result["major"] = apduResponse[1];
             result["minor"] = apduResponse[2];
             result["patch"] = apduResponse[3];
+            result["device_locked"] = apduResponse[4] === 1;
 
             result["return_code"] = error_code_data[0] * 256 + error_code_data[1];
             result["error_message"] = errorMessage(result["return_code"]);
@@ -302,6 +304,78 @@ LedgerApp.prototype.showAddress = function (hrp, path) {
             if (result.return_code === 0x6A80) {
                 result["error_message"] = apduResponse.slice(0, apduResponse.length - 2).toString('ascii');
             }
+            return result;
+        },
+        process_error_response);
+};
+
+LedgerApp.prototype.getAddressAndPubKey = function (hrp, path) {
+    let data = Buffer.concat([serialize_hrp(hrp), serialize_path(path)]);
+    let buffer = serialize(CLA, INS_GET_ADDR_SECP256K1, 0, 0, data);
+
+    return this.comm.exchange(buffer.toString('hex'), [0x9000, 0x6A80]).then(
+        function (apduResponse) {
+            let result = {};
+            apduResponse = Buffer.from(apduResponse, 'hex');
+            let error_code_data = apduResponse.slice(-2);
+
+            result["return_code"] = error_code_data[0] * 256 + error_code_data[1];
+            result["error_message"] = errorMessage(result["return_code"]);
+
+            if (result.return_code !== 0x9000) {
+                return
+            }
+
+            result["compressed_pk"] = Buffer.from(apduResponse.slice(0, 33));
+            result["bech32_address"] = Buffer.from(apduResponse.slice(33, -2)).toString();
+
+            return result;
+        },
+        process_error_response);
+};
+
+LedgerApp.prototype.appInfo = function () {
+    let buffer = serialize(0xB0, 0x01, 0, 0);
+
+    return this.comm.exchange(buffer.toString('hex'), [0x9000, 0x6A80]).then(
+        function (apduResponse) {
+            let result = {};
+            apduResponse = Buffer.from(apduResponse, 'hex');
+            let error_code_data = apduResponse.slice(-2);
+
+            result["return_code"] = error_code_data[0] * 256 + error_code_data[1];
+            result["error_message"] = errorMessage(result["return_code"]);
+
+            if (result.return_code !== 0x9000) {
+                return
+            }
+
+            if (apduResponse[0] !== 1) {
+                // Ledger responds with format ID 1. There is no spec for any format != 1
+                result["error_message"] = "response format ID not recognized";
+                return result
+            }
+
+            const appNameLen = apduResponse[1];
+            result["appName"] = apduResponse.slice(2, 2+appNameLen).toString('ascii');
+
+            var idx = 2+appNameLen;
+            const appVersionLen=apduResponse[idx];
+
+            idx++;
+            result["appVersion"] = apduResponse.slice(idx, idx+appVersionLen).toString('ascii');
+            idx+=appVersionLen;
+
+            const appFlagsLen=apduResponse[idx];
+            idx++;
+            result["flagsLen"] = appFlagsLen;
+            result["flagsValue"] = apduResponse[idx];
+
+            result["flag_recovery"] = (result["flagsValue"] & 1) !== 0;
+            result["flag_signed_mcu_code"] = (result["flagsValue"] & 2) !== 0;
+            result["flag_onboarded"] = (result["flagsValue"] & 4) !== 0;
+            result["flag_pin_validated"] = (result["flagsValue"] & 128) !== 0;
+
             return result;
         },
         process_error_response);
