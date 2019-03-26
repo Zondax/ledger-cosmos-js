@@ -351,7 +351,7 @@ LedgerApp.prototype.appInfo = function () {
             }
 
             if (apduResponse[0] !== 1) {
-                result["error_message"] = "Invalid response - format ID not recognized";
+                result["error_message"] = "format ID not recognized";
                 return result
             }
 
