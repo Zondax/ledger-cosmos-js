@@ -451,7 +451,3 @@ describe('appInfo', function () {
         expect(response.return_code).to.equal(0x9000);
     });
 });
-
-        expect(response.return_code).to.equal(0x9000);
-    });
-});
