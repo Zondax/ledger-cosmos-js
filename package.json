@@ -1,7 +1,7 @@
 {
   "name": "ledger-cosmos-js",
   "version": "1.0.0",
-  "description": "Node API for Ledger Nano S - Tendermint/Cosmos App",
+  "description": "Node API for Ledger Nano S Cosmos App",
   "main": "./src/index.js",
   "repository": {
     "type": "git",
