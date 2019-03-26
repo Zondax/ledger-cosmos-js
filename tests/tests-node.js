@@ -26,17 +26,17 @@ ledger = require('../src');
 comm = ledger.comm_node;
 browser = false;
 
-const TIMEOUT = 1000;
-const LONG_TIMEOUT = 45000;
-const EXPECTED_MAJOR = 1;
-const EXPECTED_MINOR = 3;
-const EXPECTED_PATCH = 0;
+const Timeout = 1000;
+const TimeoutLong = 45000;
+const ExpectedVersionMajor = 1;
+const ExpectedVersionMinor = 3;
+const ExpectedVersionPatch = 1;
 
 describe('get_version', function () {
     let response;
     // call API
     before(function () {
-        return comm.create_async(TIMEOUT, true).then(
+        return comm.create_async(Timeout, true).then(
             function (comm) {
                 let app = new ledger.App(comm);
                 return app.get_version().then(function (result) {
@@ -65,9 +65,9 @@ describe('get_version', function () {
         expect(response.test_mode).to.be.false;
     });
     it('app has matching version', function () {
-        expect(response.major).to.equal(EXPECTED_MAJOR);
-        expect(response.minor).to.equal(EXPECTED_MINOR);
-        expect(response.patch).to.equal(EXPECTED_PATCH);
+        expect(response.major).to.equal(ExpectedVersionMajor);
+        expect(response.minor).to.equal(ExpectedVersionMinor);
+        expect(response.patch).to.equal(ExpectedVersionPatch);
     });
 });
 
@@ -75,8 +75,8 @@ describe('get_pk', function () {
     let response;
     // call API
     before(function () {
-        this.timeout(LONG_TIMEOUT);
-        return comm.create_async(LONG_TIMEOUT, true).then(
+        this.timeout(TimeoutLong);
+        return comm.create_async(TimeoutLong, true).then(
             function (comm) {
                 let app = new ledger.App(comm);
 
@@ -165,7 +165,7 @@ describe('sign_get_chunks', function () {
 
     // call API
     before(function () {
-        return comm.create_async(TIMEOUT, true).then(
+        return comm.create_async(Timeout, true).then(
             function (comm) {
                 let app = new ledger.App(comm);
                 let path = [44, 118, 0, 0, 0];           // Derivation path. First 3 items are automatically hardened!
@@ -190,7 +190,7 @@ describe('sign_get_chunks_big', function () {
 
     // call API
     before(function () {
-        return comm.create_async(TIMEOUT, true).then(
+        return comm.create_async(Timeout, true).then(
             function (comm) {
                 let app = new ledger.App(comm);
                 let path = [44, 118, 0, 0, 0];           // Derivation path. First 3 items are automatically hardened!
@@ -227,7 +227,7 @@ describe('sign_send_chunk', function () {
 
     // call API
     before(function () {
-        return comm.create_async(TIMEOUT, true).then(
+        return comm.create_async(Timeout, true).then(
             function (comm) {
                 let app = new ledger.App(comm);
                 let path = [44, 118, 0, 0, 0];           // Derivation path. First 3 items are automatically hardened!
@@ -252,8 +252,8 @@ describe('sign', function () {
 
     // call API
     before(function () {
-        this.timeout(LONG_TIMEOUT);
-        return comm.create_async(LONG_TIMEOUT, true).then(
+        this.timeout(TimeoutLong);
+        return comm.create_async(TimeoutLong, true).then(
             async function (comm) {
                 let app = new ledger.App(comm);
                 let path = [44, 118, 0, 0, 0];           // Derivation path. First 3 items are automatically hardened!
@@ -281,8 +281,8 @@ describe('sign_and_verify', function () {
 
     // call API
     before(function () {
-        this.timeout(LONG_TIMEOUT);
-        return comm.create_async(LONG_TIMEOUT, true).then(
+        this.timeout(TimeoutLong);
+        return comm.create_async(TimeoutLong, true).then(
             async function (comm) {
                 let app = new ledger.App(comm);
                 let path = [44, 118, 0, 0, 0];           // Derivation path. First 3 items are automatically hardened!
@@ -322,8 +322,8 @@ describe('sign_2', function () {
 
     // call API
     before(function () {
-        this.timeout(LONG_TIMEOUT);
-        return comm.create_async(LONG_TIMEOUT, true).then(
+        this.timeout(TimeoutLong);
+        return comm.create_async(TimeoutLong, true).then(
             async function (comm) {
                 let app = new ledger.App(comm);
                 let path = [44, 118, 0, 0, 0];           // Derivation path. First 3 items are automatically hardened!
@@ -350,8 +350,8 @@ describe('sign_parsing_error_message', function () {
 
     // call API
     before(function () {
-        this.timeout(LONG_TIMEOUT);
-        return comm.create_async(LONG_TIMEOUT, true).then(
+        this.timeout(TimeoutLong);
+        return comm.create_async(TimeoutLong, true).then(
             async function (comm) {
                 let app = new ledger.App(comm);
                 let path = [44, 118, 0, 0, 0];           // Derivation path. First 3 items are automatically hardened!
@@ -389,8 +389,8 @@ describe('showAddress', function () {
     let response;
     // call API
     before(function () {
-        this.timeout(LONG_TIMEOUT);
-        return comm.create_async(LONG_TIMEOUT, true).then(
+        this.timeout(TimeoutLong);
+        return comm.create_async(TimeoutLong, true).then(
             function (comm) {
                 let app = new ledger.App(comm);
 
@@ -408,17 +408,17 @@ describe('showAddress', function () {
     });
 });
 
-describe('getAddress', function () {
+describe('getAddressAndPubKey', function () {
     let response;
     // call API
     before(function () {
-        this.timeout(LONG_TIMEOUT);
-        return comm.create_async(LONG_TIMEOUT, true).then(
+        this.timeout(TimeoutLong);
+        return comm.create_async(TimeoutLong, true).then(
             function (comm) {
                 let app = new ledger.App(comm);
 
                 let path = [44, 118, 5, 0, 3];
-                return app.getAddress("cosmos", path).then(function (result) {
+                return app.getAddressAndPubKey("cosmos", path).then(function (result) {
                     response = result;
                     console.log(response);
                 });
@@ -435,8 +435,8 @@ describe('appInfo', function () {
     let response;
     // call API
     before(function () {
-        this.timeout(LONG_TIMEOUT);
-        return comm.create_async(LONG_TIMEOUT, true).then(
+        this.timeout(TimeoutLong);
+        return comm.create_async(TimeoutLong, true).then(
             function (comm) {
                 let app = new ledger.App(comm);
                 return app.appInfo().then(function (result) {

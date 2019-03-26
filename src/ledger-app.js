@@ -309,7 +309,7 @@ LedgerApp.prototype.showAddress = function (hrp, path) {
         process_error_response);
 };
 
-LedgerApp.prototype.getAddress = function (hrp, path) {
+LedgerApp.prototype.getAddressAndPubKey = function (hrp, path) {
     let data = Buffer.concat([serialize_hrp(hrp), serialize_path(path)]);
     let buffer = serialize(CLA, INS_GET_ADDR_SECP256K1, 0, 0, data);
 
@@ -351,20 +351,20 @@ LedgerApp.prototype.appInfo = function () {
             }
 
             if (apduResponse[0] !== 1) {
-                result["error_message"] = "format ID not recognized";
+                // Ledger responds with format ID 1. There is no spec for any format != 1
+                result["error_message"] = "response format ID not recognized";
                 return result
             }
 
-            var idx = 1;
-            const appNameLen = apduResponse[idx];
-            idx++;
-            result["appName"] = apduResponse.slice(idx, idx+appNameLen).toString('ascii');
-            idx += appNameLen;
+            const appNameLen = apduResponse[1];
+            result["appName"] = apduResponse.slice(2, 2+appNameLen).toString('ascii');
 
-            const appVerLen=apduResponse[idx];
+            var idx = 2+appNameLen;
+            const appVersionLen=apduResponse[idx];
+
             idx++;
-            result["appVersion"] = apduResponse.slice(idx, idx+appVerLen).toString('ascii');
-            idx+=appVerLen;
+            result["appVersion"] = apduResponse.slice(idx, idx+appVersionLen).toString('ascii');
+            idx+=appVersionLen;
 
             const appFlagsLen=apduResponse[idx];
             idx++;
