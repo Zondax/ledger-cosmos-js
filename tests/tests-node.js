@@ -30,7 +30,7 @@ const Timeout = 1000;
 const TimeoutLong = 45000;
 const ExpectedVersionMajor = 1;
 const ExpectedVersionMinor = 3;
-const ExpectedVersionPatch = 1;
+const ExpectedVersionPatch = 2;
 
 describe('get_version', function () {
     let response;
@@ -227,6 +227,7 @@ describe('sign_send_chunk', function () {
 
     // call API
     before(function () {
+        this.timeout(TimeoutLong);
         return comm.create_async(Timeout, true).then(
             function (comm) {
                 let app = new ledger.App(comm);
@@ -234,12 +235,13 @@ describe('sign_send_chunk', function () {
                 let message = `{"account_number": 1,"chain_id": "some_chain","fee": {"amount": [{"amount": 10, "denom": "DEN"}],"gas": 5},"memo": "MEMO","msgs": ["SOMETHING"],"sequence": 3}`;
                 let chunks = app.sign_get_chunks(path, message);
 
-                app.sign_send_chunk(1, 2, chunks[0]).then(function (result) {
+                return app.sign_send_chunk(1, 2, chunks[0]).then(function (result) {
                     response = result;
                     console.log(response);
                 });
             });
     });
+
     it('return_code is 0x9000', function () {
         console.log("Error code 0x%s: %s ", response.return_code.toString(16), response.error_message);
         expect(response.return_code).to.equal(0x9000);
@@ -270,7 +272,7 @@ describe('sign', function () {
         expect(response.error_message).to.equal(`No errors`);
     });
     it('signature has 71 bytes', function () {
-        expect(response.signature).to.have.lengthOf(71);
+        expect(response.signature).to.have.lengthOf(70);
     });
 });
 
@@ -366,7 +368,7 @@ describe('sign_parsing_error_message', function () {
         expect(response.return_code).to.equal(0x6A80);
     });
     it('has no errors', function () {
-        expect(response.error_message).to.equal(`Missing account_number`);
+        expect(response.error_message).to.equal(`JSON Missing account_number`);
     });
 });
 
