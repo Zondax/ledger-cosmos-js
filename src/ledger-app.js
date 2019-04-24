@@ -288,27 +288,6 @@ LedgerApp.prototype.sign = async function (path, message) {
     })
 };
 
-LedgerApp.prototype.showAddress = function (hrp, path) {
-    let data = Buffer.concat([serialize_hrp(hrp), serialize_path(path)]);
-    let buffer = serialize(CLA, INS_SHOW_ADDR_SECP256K1, 0, 0, data);
-
-    return this.comm.exchange(buffer.toString('hex'), [0x9000, 0x6A80]).then(
-        function (apduResponse) {
-            let result = {};
-            apduResponse = Buffer.from(apduResponse, 'hex');
-            let error_code_data = apduResponse.slice(-2);
-
-            result["return_code"] = error_code_data[0] * 256 + error_code_data[1];
-            result["error_message"] = errorMessage(result["return_code"]);
-
-            if (result.return_code === 0x6A80) {
-                result["error_message"] = apduResponse.slice(0, apduResponse.length - 2).toString('ascii');
-            }
-            return result;
-        },
-        process_error_response);
-};
-
 LedgerApp.prototype.getAddressAndPubKey = function (hrp, path) {
     let data = Buffer.concat([serialize_hrp(hrp), serialize_path(path)]);
     let buffer = serialize(CLA, INS_GET_ADDR_SECP256K1, 0, 0, data);
