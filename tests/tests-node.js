@@ -29,8 +29,8 @@ browser = false;
 const Timeout = 1000;
 const TimeoutLong = 45000;
 const ExpectedVersionMajor = 1;
-const ExpectedVersionMinor = 3;
-const ExpectedVersionPatch = 2;
+const ExpectedVersionMinor = 5;
+const ExpectedVersionPatch = 0;
 
 describe('get_version', function () {
     let response;
@@ -387,29 +387,7 @@ describe('serialize_hrp cosmos', function () {
     });
 });
 
-describe('showAddress', function () {
-    let response;
-    // call API
-    before(function () {
-        this.timeout(TimeoutLong);
-        return comm.create_async(TimeoutLong, true).then(
-            function (comm) {
-                let app = new ledger.App(comm);
-
-                let path = [44, 118, 5, 0, 3];
-                return app.showAddress("cosmos", path).then(function (result) {
-                    response = result;
-                    console.log(response);
-                });
-
-            });
-    });
-    it('return_code is 0x9000', function () {
-        console.log("Error code 0x%s: %s ", response.return_code.toString(16), response.error_message);
-        expect(response.return_code).to.equal(0x9000);
-    });
-});
-
+// cosmos1wkd9tfm5pqvhhaxq77wv9tvjcsazuaykwsld65
 describe('getAddressAndPubKey', function () {
     let response;
     // call API
