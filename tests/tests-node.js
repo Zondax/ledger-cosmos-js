@@ -15,10 +15,7 @@
  *  limitations under the License.
  ********************************************************************************/
 
-var assert = require('assert');
 var expect = require('chai').expect;
-var Q = require('q');
-//const secp256k1 = require('secp256k1');
 const secp256k1 = require('secp256k1/elliptic');
 const crypto = require('crypto');
 
@@ -34,7 +31,7 @@ const ExpectedVersionPatch = 0;
 
 describe('get_version', function () {
     let response;
-    // call API
+// call API
     before(function () {
         return comm.create_async(Timeout, true).then(
             function (comm) {
@@ -73,7 +70,7 @@ describe('get_version', function () {
 
 describe('get_pk', function () {
     let response;
-    // call API
+// call API
     before(function () {
         this.timeout(TimeoutLong);
         return comm.create_async(TimeoutLong, true).then(
@@ -116,8 +113,7 @@ describe('create ledger object', function () {
     exception_raised = false;
     try {
         let app = new ledger.App(null);
-    }
-    catch(e) {
+    } catch (e) {
         it('raises an exception', function () {
             expect(e.message).to.equal("comm object was not set or invalid");
         });
@@ -131,8 +127,11 @@ describe('create ledger object', function () {
 describe('compress_pk', function () {
     let response;
 
-    // Use a fake comm object
-    let comm = {'setScrambleKey' : function(dummy){}};
+// Use a fake comm object
+    let comm = {
+        'setScrambleKey': function (dummy) {
+        }
+    };
 
     let app = new ledger.App(comm);
 
@@ -163,7 +162,7 @@ describe('compress_pk', function () {
 describe('sign_get_chunks', function () {
     let chunks;
 
-    // call API
+// call API
     before(function () {
         return comm.create_async(Timeout, true).then(
             function (comm) {
@@ -188,7 +187,7 @@ describe('sign_get_chunks', function () {
 describe('sign_get_chunks_big', function () {
     let chunks;
 
-    // call API
+// call API
     before(function () {
         return comm.create_async(Timeout, true).then(
             function (comm) {
@@ -225,7 +224,7 @@ describe('sign_get_chunks_big', function () {
 describe('sign_send_chunk', function () {
     let response;
 
-    // call API
+// call API
     before(function () {
         this.timeout(TimeoutLong);
         return comm.create_async(Timeout, true).then(
@@ -252,7 +251,7 @@ describe('sign', function () {
     let response;
     let message = `{"account_number":1,"chain_id":"some_chain","fee":{"amount":[{"amount":10,"denom":"DEN"}],"gas":5},"memo":"MEMO","msgs":["SOMETHING"],"sequence":3}`;
 
-    // call API
+// call API
     before(function () {
         this.timeout(TimeoutLong);
         return comm.create_async(TimeoutLong, true).then(
@@ -281,7 +280,7 @@ describe('sign_and_verify', function () {
     let response_pk;
     let message = `{"account_number":1,"chain_id":"some_chain","fee":{"amount":[{"amount":10,"denom":"DEN"}],"gas":5},"memo":"MEMO","msgs":["SOMETHING"],"sequence":3}`;
 
-    // call API
+// call API
     before(function () {
         this.timeout(TimeoutLong);
         return comm.create_async(TimeoutLong, true).then(
@@ -322,7 +321,7 @@ describe('sign_and_verify', function () {
 describe('sign_2', function () {
     let response;
 
-    // call API
+// call API
     before(function () {
         this.timeout(TimeoutLong);
         return comm.create_async(TimeoutLong, true).then(
@@ -350,7 +349,7 @@ describe('sign_2', function () {
 describe('sign_parsing_error_message', function () {
     let response;
 
-    // call API
+// call API
     before(function () {
         this.timeout(TimeoutLong);
         return comm.create_async(TimeoutLong, true).then(
@@ -373,8 +372,11 @@ describe('sign_parsing_error_message', function () {
 });
 
 describe('serialize_hrp cosmos', function () {
-    // Use a fake comm object
-    let comm = {'setScrambleKey' : function(dummy){}};
+// Use a fake comm object
+    let comm = {
+        'setScrambleKey': function (dummy) {
+        }
+    };
 
     let app = new ledger.App(comm);
 
@@ -390,7 +392,7 @@ describe('serialize_hrp cosmos', function () {
 // cosmos1wkd9tfm5pqvhhaxq77wv9tvjcsazuaykwsld65
 describe('getAddressAndPubKey', function () {
     let response;
-    // call API
+// call API
     before(function () {
         this.timeout(TimeoutLong);
         return comm.create_async(TimeoutLong, true).then(
@@ -413,7 +415,7 @@ describe('getAddressAndPubKey', function () {
 
 describe('appInfo', function () {
     let response;
-    // call API
+// call API
     before(function () {
         this.timeout(TimeoutLong);
         return comm.create_async(TimeoutLong, true).then(
@@ -429,5 +431,14 @@ describe('appInfo', function () {
     it('return_code is 0x9000', function () {
         console.log("Error code 0x%s: %s ", response.return_code.toString(16), response.error_message);
         expect(response.return_code).to.equal(0x9000);
+    });
+});
+
+describe("getBech32FromPK", () => {
+    it("get address from pk", () => {
+        const pkStr = "034fef9cd7c4c63588d3b03feb5281b9d232cba34d6f3d71aee59211ffbfe1fe87";
+        const pk = Buffer.from(pkStr, "hex");
+        let addr = ledger.Tools.getBech32FromPK("cosmos", pk);
+        expect(addr).to.equal("cosmos1w34k53py5v5xyluazqpq65agyajavep2rflq6h");
     });
 });

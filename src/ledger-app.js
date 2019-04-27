@@ -18,8 +18,6 @@
 
 'use strict';
 
-let Q = require('q');
-
 let LedgerApp = function (comm) {
     this.comm = comm;
     if (!this.comm) {
@@ -358,6 +356,17 @@ LedgerApp.prototype.appInfo = function () {
             return result;
         },
         process_error_response);
+    };
+
+LedgerApp.prototype.getBech32FromPK = function (hrp, pk) {
+    if (pk.length !== 33) {
+        throw new Error("expected compressed public key [31 bytes]");
+    }
+    const tmp = crypto.enc.Hex.parse(pk.toString("hex"));
+    const hash = ripemd160(sha256(tmp)).toString();
+    const address = Buffer.from(hash, "hex");
+    return bech32.encode(hrp, bech32.toWords(address));
 };
+
 
 module.exports = LedgerApp;
