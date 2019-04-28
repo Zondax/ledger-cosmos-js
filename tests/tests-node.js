@@ -434,6 +434,27 @@ describe('appInfo', function () {
     });
 });
 
+describe('deviceInfo', function () {
+    let response;
+// call API
+    before(function () {
+        this.timeout(TimeoutLong);
+        return comm.create_async(TimeoutLong, true).then(
+            function (comm) {
+                let app = new ledger.App(comm);
+                return app.deviceInfo().then(function (result) {
+                    response = result;
+                    console.log(response);
+                });
+
+            });
+    });
+    it('return_code is 0x9000', function () {
+        console.log("Error code 0x%s: %s ", response.return_code.toString(16), response.error_message);
+        expect(response.return_code).to.equal(0x9000);
+    });
+});
+
 describe("getBech32FromPK", () => {
     it("get address from pk", () => {
         const pkStr = "034fef9cd7c4c63588d3b03feb5281b9d232cba34d6f3d71aee59211ffbfe1fe87";

@@ -111,7 +111,7 @@ function errorMessage(error_code) {
 function process_error_response(response) {
     let result = {};
 
-    if (typeof response === 'string' || response instanceof String ) {
+    if (typeof response === 'string' || response instanceof String) {
         // Unfortunately, ledger node implementation returns an string!! :(
         result["return_code"] = parseInt(response.slice(-4), 16);
     } else {
@@ -183,7 +183,7 @@ function compressPublicKey(publicKey) {
     const y = publicKey.slice(33, 65);
     const z = new Buffer.from([2 + (y[y.length - 1] & 1)]);
 
-    return Buffer.concat([ z, publicKey.slice(1, 33) ]);
+    return Buffer.concat([z, publicKey.slice(1, 33)]);
 }
 
 LedgerApp.prototype.compressPublicKey = function (pk) {
@@ -334,16 +334,16 @@ LedgerApp.prototype.appInfo = function () {
             }
 
             const appNameLen = apduResponse[1];
-            result["appName"] = apduResponse.slice(2, 2+appNameLen).toString('ascii');
+            result["appName"] = apduResponse.slice(2, 2 + appNameLen).toString('ascii');
 
-            var idx = 2+appNameLen;
-            const appVersionLen=apduResponse[idx];
+            var idx = 2 + appNameLen;
+            const appVersionLen = apduResponse[idx];
 
             idx++;
-            result["appVersion"] = apduResponse.slice(idx, idx+appVersionLen).toString('ascii');
-            idx+=appVersionLen;
+            result["appVersion"] = apduResponse.slice(idx, idx + appVersionLen).toString('ascii');
+            idx += appVersionLen;
 
-            const appFlagsLen=apduResponse[idx];
+            const appFlagsLen = apduResponse[idx];
             idx++;
             result["flagsLen"] = appFlagsLen;
             result["flagsValue"] = apduResponse[idx];
@@ -356,7 +356,48 @@ LedgerApp.prototype.appInfo = function () {
             return result;
         },
         process_error_response);
-    };
+};
+
+LedgerApp.prototype.deviceInfo = function () {
+    let buffer = serialize(0xE0, 0x01, 0, 0);
+
+    return this.comm.exchange(buffer.toString('hex'), [0x9000, 0x6A80]).then(
+        function (apduResponse) {
+            let result = {};
+            console.log(apduResponse);
+
+            apduResponse = Buffer.from(apduResponse, 'hex');
+            let error_code_data = apduResponse.slice(-2);
+            result["return_code"] = error_code_data[0] * 256 + error_code_data[1];
+            result["error_message"] = errorMessage(result["return_code"]);
+
+            if (result.return_code !== 0x9000) {
+                return
+            }
+
+            result["targetId"] = apduResponse.slice(0, 4).toString('hex');
+
+            let pos = 4;
+            const secureElementVersionLen = apduResponse[pos++];
+            result["seVersion"] = apduResponse.slice(pos, pos + secureElementVersionLen).toString();
+            pos += secureElementVersionLen;
+
+            const flagsLen = apduResponse[pos++];
+            result["flag"] = apduResponse.slice(pos, pos + flagsLen).toString('hex');
+            pos += flagsLen;
+
+            const mcuVersionLen = apduResponse[pos++];
+            // Patch issue in mcu version
+            let tmp = apduResponse.slice(pos, pos + mcuVersionLen);
+            if (tmp[mcuVersionLen-1]==0){
+                tmp = apduResponse.slice(pos, pos + mcuVersionLen-1);
+            }
+            result["mcuVersion"] = tmp.toString();
+            return result;
+        },
+        process_error_response);
+};
+
 
 LedgerApp.prototype.getBech32FromPK = function (hrp, pk) {
     if (pk.length !== 33) {
