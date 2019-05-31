@@ -1,13 +1,15 @@
 {
   "name": "ledger-cosmos-js",
-  "version": "1.0.0",
-  "description": "Node API for Ledger Nano S Cosmos App",
-  "main": "./src/index.js",
+  "version": "2.0.0",
+  "description": "Node API for Cosmos App (Ledger Nano S/X)",
+  "main": "./dist/index.js",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/zondax/ledger-cosmos-js.git"
   },
   "keywords": [
+    "Ledger",
+    "Ledger",
     "Ledger",
     "Javascript",
     "Tendermint",
@@ -20,28 +22,38 @@
   },
   "homepage": "https://github.com/zondax/ledger-cosmos-js",
   "dependencies": {
+    "@ledgerhq/hw-transport": "^4.35.0",
+    "@babel/runtime": "^7.4.4",
     "bech32": "^1.1.3",
-    "ripemd160": "^2.0.2",
-    "node-hid": "0.7.4",
-    "q": "^1.5.1"
+    "ripemd160": "^2.0.2"
   },
   "devDependencies": {
-    "browserify": "^16.2.3",
-    "chai": "^4.2.0",
-    "mocha": "^5.0.1",
-    "secp256k1": "^3.6.2",
-    "uglify-js": "^3.5.8"
+    "@ledgerhq/hw-transport-node-hid": "^4.35.0",
+    "@ledgerhq/logs": "^4.60.2",
+    "@babel/cli": "^7.4.4",
+    "@babel/core": "^7.4.4",
+    "@babel/node": "^7.2.2",
+    "@babel/plugin-transform-runtime": "^7.4.4",
+    "@babel/preset-env": "^7.4.4",
+    "babel-jest": "^24.7.1",
+    "bip32": "2.0.1",
+    "bip39": "2.6.0",
+    "crypto-js": "3.1.9-1",
+    "eslint": "^5.16.0",
+    "eslint-config-airbnb-base": "^13.1.0",
+    "eslint-plugin-import": "^2.17.2",
+    "eslint-plugin-jest": "^22.5.1",
+    "jest": "^24.7.1",
+    "secp256k1": "^3.6.2"
   },
   "scripts": {
-    "browserify": "browserify --im --s=ledger -o browser/ledger.js src/index-browserify.js; cp src/chrome-u2f-api.js browser/; cp browser/*.js tests/browser/",
-    "browserify-test": "browserify --standalone runExample -o tests/browser/test-bundle.js tests/tests-browser.js",
-    "test-node": "mocha tests/tests-node.js",
-    "clean": "rm -f browser/*.js; rm -f tests/browser/*.js;"
+    "build": "babel src --out-dir dist",
+    "test:unit": "jest -c jest.config.unit.js",
+    "test:integration": "jest -c jest.config.integration.js --runInBand --detectOpenHandles",
+    "serve": "node dist/server.js"
   },
-  "browser": {
-    "node-hid": false
-  },
-  "directories": {
-    "test": "tests"
-  }
+  "moduleDirectories": [
+    "node_modules",
+    "dist"
+  ]
 }

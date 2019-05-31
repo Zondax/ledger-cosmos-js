@@ -19,7 +19,7 @@ var expect = require('chai').expect;
 const secp256k1 = require('secp256k1/elliptic');
 const crypto = require('crypto');
 
-ledger = require('../src');
+ledger = require('../src/index_old');
 comm = ledger.comm_node;
 browser = false;
 

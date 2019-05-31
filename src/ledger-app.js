@@ -35,184 +35,184 @@ const INS_GET_ADDR_SECP256K1 = 0x04;
 
 const CHUNK_SIZE = 250;
 
-function serialize(CLA, INS, p1 = 0, p2 = 0, data = null) {
-    let size = 5;
-    if (data != null) {
-        if (data.length > 255) {
-            throw new Error('maximum data size = 255');
-        }
-        size += data.length
-    }
-    let buffer = Buffer.alloc(size);
+// function serialize(CLA, INS, p1 = 0, p2 = 0, data = null) {
+//     let size = 5;
+//     if (data != null) {
+//         if (data.length > 255) {
+//             throw new Error('maximum data size = 255');
+//         }
+//         size += data.length
+//     }
+//     let buffer = Buffer.alloc(size);
+//
+//     buffer[0] = CLA;
+//     buffer[1] = INS;
+//     buffer[2] = p1;
+//     buffer[3] = p2;
+//     buffer[4] = 0;
+//
+//     if (data != null) {
+//         buffer[4] = data.length;
+//         buffer.set(data, 5);
+//     }
+//
+//     return buffer;
+// }
 
-    buffer[0] = CLA;
-    buffer[1] = INS;
-    buffer[2] = p1;
-    buffer[3] = p2;
-    buffer[4] = 0;
+// function errorMessage(error_code) {
+//     switch (error_code) {
+//         case 1:
+//             return "U2F: Unknown";
+//         case 2:
+//             return "U2F: Bad request";
+//         case 3:
+//             return "U2F: Configuration unsupported";
+//         case 4:
+//             return "U2F: Device Ineligible";
+//         case 5:
+//             return "U2F: Timeout";
+//         case 14:
+//             return "Timeout";
+//         case 0x9000:
+//             return "No errors";
+//         case 0x9001:
+//             return "Device is busy";
+//         case 0x6400:
+//             return "Execution Error";
+//         case 0x6700:
+//             return "Wrong Length";
+//         case 0x6982:
+//             return "Empty Buffer";
+//         case 0x6983:
+//             return "Output buffer too small";
+//         case 0x6984:
+//             return "Data is invalid";
+//         case 0x6985:
+//             return "Conditions not satisfied";
+//         case 0x6986:
+//             return "Transaction rejected";
+//         case 0x6A80:
+//             return "Bad key handle";
+//         case 0x6B00:
+//             return "Invalid P1/P2";
+//         case 0x6D00:
+//             return "Instruction not supported";
+//         case 0x6E00:
+//             return "Cosmos app does not seem to be open";
+//         case 0x6F00:
+//             return "Unknown error";
+//         case 0x6F01:
+//             return "Sign/verify error";
+//         default:
+//             return "Unknown error code";
+//     }
+// }
 
-    if (data != null) {
-        buffer[4] = data.length;
-        buffer.set(data, 5);
-    }
+// function process_error_response(response) {
+//     let result = {};
+//
+//     if (typeof response === 'string' || response instanceof String) {
+//         // Unfortunately, ledger node implementation returns an string!! :(
+//         result["return_code"] = parseInt(response.slice(-4), 16);
+//     } else {
+//         // Handle U2F communication normally
+//         result["return_code"] = response.errorCode;
+//     }
+//
+//     result["error_message"] = errorMessage(result["return_code"]);
+//
+//     return result;
+// }
 
-    return buffer;
-}
+// LedgerApp.prototype.get_version = function () {
+//     let buffer = serialize(CLA, INS_GET_VERSION, 0, 0);
+//
+//     return this.comm.exchange(buffer.toString('hex'), [0x9000]).then(
+//         function (apduResponse) {
+//             var result = {};
+//             apduResponse = Buffer.from(apduResponse, 'hex');
+//             let error_code_data = apduResponse.slice(-2);
+//
+//             result["test_mode"] = apduResponse[0] !== 0;
+//             result["major"] = apduResponse[1];
+//             result["minor"] = apduResponse[2];
+//             result["patch"] = apduResponse[3];
+//             result["device_locked"] = apduResponse[4] === 1;
+//
+//             result["return_code"] = error_code_data[0] * 256 + error_code_data[1];
+//             result["error_message"] = errorMessage(result["return_code"]);
+//             return result;
+//         },
+//         process_error_response);
+// };
 
-function errorMessage(error_code) {
-    switch (error_code) {
-        case 1:
-            return "U2F: Unknown";
-        case 2:
-            return "U2F: Bad request";
-        case 3:
-            return "U2F: Configuration unsupported";
-        case 4:
-            return "U2F: Device Ineligible";
-        case 5:
-            return "U2F: Timeout";
-        case 14:
-            return "Timeout";
-        case 0x9000:
-            return "No errors";
-        case 0x9001:
-            return "Device is busy";
-        case 0x6400:
-            return "Execution Error";
-        case 0x6700:
-            return "Wrong Length";
-        case 0x6982:
-            return "Empty Buffer";
-        case 0x6983:
-            return "Output buffer too small";
-        case 0x6984:
-            return "Data is invalid";
-        case 0x6985:
-            return "Conditions not satisfied";
-        case 0x6986:
-            return "Transaction rejected";
-        case 0x6A80:
-            return "Bad key handle";
-        case 0x6B00:
-            return "Invalid P1/P2";
-        case 0x6D00:
-            return "Instruction not supported";
-        case 0x6E00:
-            return "Cosmos app does not seem to be open";
-        case 0x6F00:
-            return "Unknown error";
-        case 0x6F01:
-            return "Sign/verify error";
-        default:
-            return "Unknown error code";
-    }
-}
+// function serialize_hrp(hrp) {
+//     if (hrp == null || hrp.length < 3 || hrp.length > 83) {
+//         throw new Error("Invalid HRP")
+//     }
+//     let buf = Buffer.alloc(1 + hrp.length);
+//     buf.writeUInt8(hrp.length, 0);
+//     buf.write(hrp, 1);
+//     return buf;
+// }
+//
+// function serialize_path(path) {
+//     if (path == null || path.length < 3) {
+//         throw new Error("Invalid path.")
+//     }
+//     if (path.length > 10) {
+//         throw new Error("Invalid path. Length should be <= 10")
+//     }
+//     let buf = Buffer.alloc(1 + 4 * path.length);
+//     buf.writeUInt8(path.length, 0);
+//     for (let i = 0; i < path.length; i++) {
+//         let v = path[i];
+//         if (i < 3) {
+//             v |= 0x80000000;    // Harden
+//         }
+//         buf.writeInt32LE(v, 1 + i * 4);
+//     }
+//     return buf;
+// }
 
-function process_error_response(response) {
-    let result = {};
+// function compressPublicKey(publicKey) {
+//     if (publicKey.length !== 65) {
+//         throw new Error('decompressed public key length should be 65 bytes');
+//     }
+//
+//     const y = publicKey.slice(33, 65);
+//     const z = new Buffer.from([2 + (y[y.length - 1] & 1)]);
+//
+//     return Buffer.concat([z, publicKey.slice(1, 33)]);
+// }
+//
+// LedgerApp.prototype.compressPublicKey = function (pk) {
+//     return compressPublicKey(pk);
+// };
+//
+// LedgerApp.prototype.serializeHRP = function (hrp) {
+//     return serialize_hrp(hrp);
+// };
 
-    if (typeof response === 'string' || response instanceof String) {
-        // Unfortunately, ledger node implementation returns an string!! :(
-        result["return_code"] = parseInt(response.slice(-4), 16);
-    } else {
-        // Handle U2F communication normally
-        result["return_code"] = response.errorCode;
-    }
-
-    result["error_message"] = errorMessage(result["return_code"]);
-
-    return result;
-}
-
-LedgerApp.prototype.get_version = function () {
-    let buffer = serialize(CLA, INS_GET_VERSION, 0, 0);
-
-    return this.comm.exchange(buffer.toString('hex'), [0x9000]).then(
-        function (apduResponse) {
-            var result = {};
-            apduResponse = Buffer.from(apduResponse, 'hex');
-            let error_code_data = apduResponse.slice(-2);
-
-            result["test_mode"] = apduResponse[0] !== 0;
-            result["major"] = apduResponse[1];
-            result["minor"] = apduResponse[2];
-            result["patch"] = apduResponse[3];
-            result["device_locked"] = apduResponse[4] === 1;
-
-            result["return_code"] = error_code_data[0] * 256 + error_code_data[1];
-            result["error_message"] = errorMessage(result["return_code"]);
-            return result;
-        },
-        process_error_response);
-};
-
-function serialize_hrp(hrp) {
-    if (hrp == null || hrp.length < 3 || hrp.length > 83) {
-        throw new Error("Invalid HRP")
-    }
-    let buf = Buffer.alloc(1 + hrp.length);
-    buf.writeUInt8(hrp.length, 0);
-    buf.write(hrp, 1);
-    return buf;
-}
-
-function serialize_path(path) {
-    if (path == null || path.length < 3) {
-        throw new Error("Invalid path.")
-    }
-    if (path.length > 10) {
-        throw new Error("Invalid path. Length should be <= 10")
-    }
-    let buf = Buffer.alloc(1 + 4 * path.length);
-    buf.writeUInt8(path.length, 0);
-    for (let i = 0; i < path.length; i++) {
-        let v = path[i];
-        if (i < 3) {
-            v |= 0x80000000;    // Harden
-        }
-        buf.writeInt32LE(v, 1 + i * 4);
-    }
-    return buf;
-}
-
-function compressPublicKey(publicKey) {
-    if (publicKey.length !== 65) {
-        throw new Error('decompressed public key length should be 65 bytes');
-    }
-
-    const y = publicKey.slice(33, 65);
-    const z = new Buffer.from([2 + (y[y.length - 1] & 1)]);
-
-    return Buffer.concat([z, publicKey.slice(1, 33)]);
-}
-
-LedgerApp.prototype.compressPublicKey = function (pk) {
-    return compressPublicKey(pk);
-};
-
-LedgerApp.prototype.serializeHRP = function (hrp) {
-    return serialize_hrp(hrp);
-};
-
-LedgerApp.prototype.publicKey = function (path) {
-    var buffer = serialize(CLA, INS_PUBLIC_KEY_SECP256K1, 0, 0, serialize_path(path));
-
-    return this.comm.exchange(buffer.toString('hex'), [0x9000]).then(
-        function (apduResponse) {
-            var result = {};
-            apduResponse = Buffer.from(apduResponse, 'hex');
-            let error_code_data = apduResponse.slice(-2);
-            let pk = Buffer.from(apduResponse.slice(0, 65));
-
-            result["pk"] = pk;
-            result["compressed_pk"] = compressPublicKey(pk);
-            result["return_code"] = error_code_data[0] * 256 + error_code_data[1];
-            result["error_message"] = errorMessage(result["return_code"]);
-
-            return result;
-        },
-        process_error_response);
-};
+// LedgerApp.prototype.publicKey = function (path) {
+//     var buffer = serialize(CLA, INS_PUBLIC_KEY_SECP256K1, 0, 0, serialize_path(path));
+//
+//     return this.comm.exchange(buffer.toString('hex'), [0x9000]).then(
+//         function (apduResponse) {
+//             var result = {};
+//             apduResponse = Buffer.from(apduResponse, 'hex');
+//             let error_code_data = apduResponse.slice(-2);
+//             let pk = Buffer.from(apduResponse.slice(0, 65));
+//
+//             result["pk"] = pk;
+//             result["compressed_pk"] = compressPublicKey(pk);
+//             result["return_code"] = error_code_data[0] * 256 + error_code_data[1];
+//             result["error_message"] = errorMessage(result["return_code"]);
+//
+//             return result;
+//         },
+//         process_error_response);
+// };
 
 LedgerApp.prototype.sign_get_chunks = function (path, message) {
     let chunks = [];
@@ -399,15 +399,15 @@ LedgerApp.prototype.deviceInfo = function () {
 };
 
 
-LedgerApp.prototype.getBech32FromPK = function (hrp, pk) {
-    if (pk.length !== 33) {
-        throw new Error("expected compressed public key [31 bytes]");
-    }
-    const tmp = crypto.enc.Hex.parse(pk.toString("hex"));
-    const hash = ripemd160(sha256(tmp)).toString();
-    const address = Buffer.from(hash, "hex");
-    return bech32.encode(hrp, bech32.toWords(address));
-};
+// LedgerApp.prototype.getBech32FromPK = function (hrp, pk) {
+//     if (pk.length !== 33) {
+//         throw new Error("expected compressed public key [31 bytes]");
+//     }
+//     const tmp = crypto.enc.Hex.parse(pk.toString("hex"));
+//     const hash = ripemd160(sha256(tmp)).toString();
+//     const address = Buffer.from(hash, "hex");
+//     return bech32.encode(hrp, bech32.toWords(address));
+// };
 
 
 module.exports = LedgerApp;
