@@ -182,17 +182,8 @@ test('sign_big_tx', async () => {
 
     expect(response_pk.return_code).toEqual(0x9000);
     expect(response_pk.error_message).toEqual('No errors');
-    expect(response_sign.return_code).toEqual(0x9000);
-    expect(response_sign.error_message).toEqual('No errors');
-
-    // Check signature is valid
-    const hash = crypto.createHash('sha256');
-    let msg_hash = hash.update(message).digest();
-
-    let signature_der = response_sign.signature;
-    let signature = secp256k1.signatureImport(signature_der);
-    let signature_ok = secp256k1.verify(msg_hash, signature, response_pk.compressed_pk);
-    expect(signature_ok).toEqual(true);
+    expect(response_sign.return_code).toEqual(0x6A80);
+    expect(response_sign.error_message).toEqual('NOMEM: JSON string contains too many tokens');
 });
 
 
