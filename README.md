@@ -7,5 +7,3 @@
 This package provides a basic client library to communicate with a Tendermint/Cosmos App running in a Ledger Nano S/X
 
 The package is being published in npmjs. It is recommended to use that in order to receive updates and fixes. 
-
-
