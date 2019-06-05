@@ -6,4 +6,10 @@
 
 This package provides a basic client library to communicate with a Tendermint/Cosmos App running in a Ledger Nano S/X
 
-The package is being published in npmjs. It is recommended to use that in order to receive updates and fixes. 
+We recommend using the npmjs package in order to receive updates/fixes.
+
+This repo also includes a simple Vue example for U2F and WebUSB.
+
+![Example](docs/example.png)
+
+**Note: WebUSB support requires Cosmos app >1.5.3**
