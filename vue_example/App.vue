@@ -1,20 +1,26 @@
 <template>
   <div id="app">
-    <img alt="Vue logo" src="./assets/logo.png">
+    <a href="http://zondax.ch">
+      <img
+        alt="Vue logo"
+        src="./assets/logo.png"
+        width="300"
+      >
+    </a>
     <h1>Cosmos - Ledger integration example</h1>
-    <CosmosLedger msg="Minimal Cosmos+Ledger delegation example"/>
+    <CosmosLedger msg="Minimal Cosmos+Ledger delegation example" />
   </div>
 </template>
 
 <script>
-import CosmosLedger from './components/CosmosLedger.vue'
+import CosmosLedger from './components/CosmosLedger.vue';
 
 export default {
-  name: 'app',
-  components: {
-    CosmosLedger
-  }
-}
+    name: 'App',
+    components: {
+        CosmosLedger,
+    },
+};
 </script>
 
 <style>

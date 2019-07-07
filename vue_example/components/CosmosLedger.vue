@@ -15,9 +15,23 @@
     >
     <label for="u2f">U2F</label>
     <br>
-    <button @click="tryConnect">
-      Connect and get version
+    <!--
+        Commands
+    -->
+    <button @click="getVersion">
+      Get Version
     </button>
+
+    <button @click="showAddress">
+      Show Address
+    </button>
+
+    <button @click="signExampleTx">
+      Sign Example TX
+    </button>
+    <!--
+        Commands
+    -->
     <ul id="ledger-status">
       <li
         v-for="item in ledgerStatus"
@@ -43,7 +57,7 @@ export default {
     data() {
         return {
             deviceLog: [],
-            transportChoice: 'WebUSB',
+            transportChoice: 'U2F',
         };
     },
     computed: {
@@ -58,18 +72,15 @@ export default {
                 msg,
             });
         },
-        async tryConnect() {
-            this.deviceLog = [];
-            this.log(`Trying to connect via ${this.transportChoice}...`);
-
+        async getTransport() {
             let transport = null;
 
+            this.log(`Trying to connect via ${this.transportChoice}...`);
             if (this.transportChoice === 'WebUSB') {
                 try {
                     transport = await TransportWebUSB.create();
                 } catch (e) {
                     this.log(e);
-                    return;
                 }
             }
 
@@ -78,19 +89,65 @@ export default {
                     transport = await TransportU2F.create(10000);
                 } catch (e) {
                     this.log(e);
-                    return;
                 }
             }
 
+            return transport;
+        },
+        async getVersion() {
+            this.deviceLog = [];
+
             // Given a transport (U2F/HIF/WebUSB) it is possible instantiate the app
+            const transport = await this.getTransport();
             const app = new CosmosApp(transport);
 
             // now it is possible to access all commands in the app
             const response = await app.getVersion();
-            if (response.error_message !== 'No errors') {
-                this.log(`Error [${response.error_message}] ${response.error_message}`);
+            if (response.return_code !== 0x9000) {
+                this.log(`Error [${response.return_code}] ${response.error_message}`);
                 return;
             }
+
+            this.log('Response received!');
+            this.log(`App Version ${response.major}.${response.minor}.${response.patch}`);
+            this.log(`Device Locked: ${response.device_locked}`);
+            this.log(`Test mode: ${response.test_mode}`);
+            this.log('Full response:');
+            this.log(response);
+        },
+        async showAddress() {
+            this.deviceLog = [];
+
+            // Given a transport (U2F/HIF/WebUSB) it is possible instantiate the app
+            const transport = await this.getTransport();
+            const app = new CosmosApp(transport);
+
+            // now it is possible to access all commands in the app
+            const path = [44, 118, 5, 0, 3];
+            const response = await app.getAddressAndPubKey(path, 'cosmos');
+            if (response.return_code !== 0x9000) {
+                this.log(`Error [${response.return_code}] ${response.error_message}`);
+                return;
+            }
+
+            this.log('Response received!');
+            this.log(`App Version ${response.major}.${response.minor}.${response.patch}`);
+            this.log(`Device Locked: ${response.device_locked}`);
+            this.log(`Test mode: ${response.test_mode}`);
+            this.log('Full response:');
+            this.log(response);
+        },
+        async signExampleTx() {
+            this.deviceLog = [];
+
+            // Given a transport (U2F/HIF/WebUSB) it is possible instantiate the app
+            const transport = await this.getTransport();
+            const app = new CosmosApp(transport);
+
+            // now it is possible to access all commands in the app
+            const path = [44, 118, 0, 0, 0];
+            const message = '{"account_number":"6571","chain_id":"cosmoshub-2","fee":{"amount":[{"amount":"5000","denom":"uatom"}],"gas":"200000"},"memo":"Delegated with Ledger from union.market","msgs":[{"type":"cosmos-sdk/MsgDelegate","value":{"amount":{"amount":"1000000","denom":"uatom"},"delegator_address":"cosmos102hty0jv2s29lyc4u0tv97z9v298e24t3vwtpl","validator_address":"cosmosvaloper1grgelyng2v6v3t8z87wu3sxgt9m5s03xfytvz7"}}],"sequence":"0"}';
+            const response = await app.sign(path, message);
 
             this.log('Response received!');
             this.log(`App Version ${response.major}.${response.minor}.${response.patch}`);

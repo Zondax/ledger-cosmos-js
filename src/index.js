@@ -15,9 +15,6 @@
  *  limitations under the License.
  ******************************************************************************* */
 
-// import Transport from '@ledgerhq/hw-transport';
-// import TransportStatusError from '@ledgerhq/hw-transport';
-
 import crypto from 'crypto';
 import Ripemd160 from 'ripemd160';
 import bech32 from 'bech32';
@@ -163,6 +160,17 @@ export default class CosmosApp {
                 (response) => {
                     const errorCodeData = response.slice(-2);
                     const returnCode = errorCodeData[0] * 256 + errorCodeData[1];
+
+                    let targetId = 0;
+                    if (response.length >= 9) {
+                        /* eslint-disable no-bitwise */
+                        targetId = (response[5] << 24)
+                            + (response[6] << 16)
+                            + (response[7] << 8)
+                            + (response[8] << 0);
+                        /* eslint-enable no-bitwise */
+                    }
+
                     return {
                         return_code: returnCode,
                         error_message: errorCodeToString(returnCode),
@@ -172,6 +180,7 @@ export default class CosmosApp {
                         minor: response[2],
                         patch: response[3],
                         device_locked: response[4] === 1,
+                        target_id: targetId.toString(16),
                     };
                 },
                 processErrorResponse,
@@ -324,7 +333,7 @@ export default class CosmosApp {
     }
 
     // eslint-disable-next-line camelcase
-    async sign_send_chunk(chunk_idx, chunk_num, chunk) {
+    async signSendChunk(chunk_idx, chunk_num, chunk) {
         return this.transport.send(
             CLA,
             INS.SIGN_SECP256K1,
@@ -360,7 +369,7 @@ export default class CosmosApp {
 
     async sign(path, message) {
         const chunks = signGetChunks(path, message);
-        return this.sign_send_chunk(1, chunks.length, chunks[0], [0x9000])
+        return this.signSendChunk(1, chunks.length, chunks[0], [0x9000])
             .then(
                 async (response) => {
                     let result = {
@@ -371,7 +380,7 @@ export default class CosmosApp {
 
                     for (let i = 1; i < chunks.length; i += 1) {
                         // eslint-disable-next-line no-await-in-loop
-                        result = await this.sign_send_chunk(1 + i, chunks.length, chunks[i]);
+                        result = await this.signSendChunk(1 + i, chunks.length, chunks[i]);
                         if (result.return_code !== 0x9000) {
                             break;
                         }
