@@ -25,21 +25,21 @@ test('publicKey', async () => {
 
     // Derivation path. First 3 items are automatically hardened!
     const path = [44, 118, 0, 0, 0];
+
+    let elapsed = new Date().getTime();
     const resp = await app.publicKey(path);
+    elapsed = new Date().getTime() - elapsed;
+    console.log('Elapsed: ', elapsed);
 
     console.log(resp);
 
     expect(resp.return_code).toEqual(0x9000);
     expect(resp.error_message).toEqual('No errors');
-
-    expect(resp).toHaveProperty('pk');
     expect(resp).toHaveProperty('compressed_pk');
-
-    expect(resp.pk.length).toEqual(65);
     expect(resp.compressed_pk.length).toEqual(33);
-
-    const expectedCompressedPk = secp256k1.publicKeyConvert(resp.pk, true);
-    expect(resp.compressed_pk.toString('hex')).toEqual(expectedCompressedPk.toString('hex'));
+    expect(resp.compressed_pk.toString('hex')).toEqual(
+        '034fef9cd7c4c63588d3b03feb5281b9d232cba34d6f3d71aee59211ffbfe1fe87',
+    );
 });
 
 test('getAddressAndPubKey', async () => {
@@ -110,7 +110,18 @@ test('sign_and_verify', async () => {
 
     // Derivation path. First 3 items are automatically hardened!
     const path = [44, 118, 0, 0, 0];
-    const message = '{"account_number":"6571","chain_id":"cosmoshub-2","fee":{"amount":[{"amount":"5000","denom":"uatom"}],"gas":"200000"},"memo":"Delegated with Ledger from union.market","msgs":[{"type":"cosmos-sdk/MsgDelegate","value":{"amount":{"amount":"1000000","denom":"uatom"},"delegator_address":"cosmos102hty0jv2s29lyc4u0tv97z9v298e24t3vwtpl","validator_address":"cosmosvaloper1grgelyng2v6v3t8z87wu3sxgt9m5s03xfytvz7"}}],"sequence":"0"}';
+    const message = '{'
+        + '"account_number":"6571",'
+        + '"chain_id":"cosmoshub-2",'
+        + '"fee":{"amount":[{"amount":"5000","denom":"uatom"}],"gas":"200000"},'
+        + '"memo":"Delegated with Ledger from union.market",'
+        + '"msgs":['
+        + '{'
+        + '"type":"cosmos-sdk/MsgDelegate",'
+        + '"value":{"amount":{"amount":"1000000","denom":"uatom"},"delegator_address":"cosmos102hty0jv2s29lyc4u0tv97z9v298e24t3vwtpl","validator_address":"cosmosvaloper1grgelyng2v6v3t8z87wu3sxgt9m5s03xfytvz7"}'
+        + '}'
+        + '],'
+        + '"sequence":"0"}';
 
     const responsePk = await app.publicKey(path);
     const responseSign = await app.sign(path, message);

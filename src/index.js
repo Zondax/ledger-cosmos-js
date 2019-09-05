@@ -105,16 +105,6 @@ function serializePath(path) {
     return buf;
 }
 
-function compressPublicKey(publicKey) {
-    if (publicKey.length !== 65) {
-        throw new Error('decompressed public key length should be 65 bytes');
-    }
-    const y = publicKey.slice(33, 65);
-    // eslint-disable-next-line no-bitwise,new-cap
-    const z = new Buffer.from([2 + (y[y.length - 1] & 1)]);
-    return Buffer.concat([z, publicKey.slice(1, 33)]);
-}
-
 export function signGetChunks(path, message) {
     const chunks = [];
     chunks.push(serializePath(path));
@@ -292,16 +282,17 @@ export default class CosmosApp {
     }
 
     async publicKey(path) {
-        const serializedPath = serializePath(path);
-        return this.transport.send(CLA, INS.PUBLIC_KEY_SECP256K1, 0, 0, serializedPath)
+        const data = Buffer.concat([serializeHRP('cosmos'), serializePath(path)]);
+        return this.transport.send(CLA, INS.GET_ADDR_SECP256K1, 0, 0, data, [0x9000])
             .then(
                 (response) => {
                     const errorCodeData = response.slice(-2);
                     const returnCode = errorCodeData[0] * 256 + errorCodeData[1];
-                    const pk = Buffer.from(response.slice(0, 65));
+                    const compressedPk = Buffer.from(response.slice(0, 33));
+
                     return {
-                        pk,
-                        compressed_pk: compressPublicKey(pk),
+                        pk: 'OBSOLETE PROPERTY',
+                        compressed_pk: compressedPk,
                         return_code: returnCode,
                         error_message: errorCodeToString(returnCode),
                     };
@@ -312,7 +303,7 @@ export default class CosmosApp {
 
     async getAddressAndPubKey(path, hrp) {
         const data = Buffer.concat([serializeHRP(hrp), serializePath(path)]);
-        return this.transport.send(CLA, INS.GET_ADDR_SECP256K1, 0, 0, data, [0x9000])
+        return this.transport.send(CLA, INS.GET_ADDR_SECP256K1, 1, 0, data, [0x9000])
             .then(
                 (response) => {
                     const errorCodeData = response.slice(-2);
