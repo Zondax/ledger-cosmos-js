@@ -9,6 +9,7 @@ jobs:
   build:
     <<: *defaults
     steps:
+      - run: sudo apt-get install libusb-1.0.0
       - checkout
       - run: yarn install
       - run: yarn build
@@ -16,6 +17,7 @@ jobs:
   test:
     <<: *defaults
     steps:
+      - run: sudo apt-get install libusb-1.0.0
       - checkout
       - run: yarn install
       - run: yarn test:unit
@@ -23,6 +25,7 @@ jobs:
   publish:
     <<: *defaults
     steps:
+      - run: sudo apt-get install libusb-1.0.0
       - checkout
       - run: yarn install
       - run: yarn build
