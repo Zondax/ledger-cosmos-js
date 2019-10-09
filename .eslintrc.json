@@ -6,11 +6,13 @@
     "jest/globals": true
   },
   "plugins": [
-    "jest"
+    "jest",
+    "prettier"
   ],
   "extends": [
     "airbnb-base",
-    "plugin:vue/recommended"
+    "plugin:vue/recommended",
+    "plugin:prettier/recommended"
   ],
   "globals": {
     "Atomics": "readonly",
@@ -22,9 +24,8 @@
     "sourceType": "module"
   },
   "rules": {
-    "indent": [
-      "error",
-      4
-    ]
+    "import/prefer-default-export": "off",
+    "vue/html-self-closing": "off",
+    "vue/max-attributes-per-line": "off"
   }
 }

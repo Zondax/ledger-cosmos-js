@@ -1,4 +1,4 @@
-const config = require('./jest.config');
+const config = require("./jest.config");
 
 // Override default configuration
 config.testMatch = [
@@ -7,6 +7,6 @@ config.testMatch = [
 ];
 
 // eslint-disable-next-line no-console
-console.log('RUNNING INTEGRATION TESTS');
+console.log("RUNNING INTEGRATION TESTS");
 
 module.exports = config;
