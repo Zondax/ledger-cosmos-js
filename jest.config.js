@@ -2,10 +2,7 @@
 // https://jestjs.io/docs/en/configuration.html
 
 module.exports = {
-  modulePaths: [
-    '<rootDir>/src',
-    '<rootDir>/tests',
-  ],
+  modulePaths: ["<rootDir>/src", "<rootDir>/tests"],
 
   moduleNameMapper: {
     "^jest$": "<rootDir>/tests/jest.js",
@@ -20,6 +17,8 @@ module.exports = {
 
   // A list of paths to directories that Jest should use to search for files in
   roots: ["<rootDir>"],
+
+  runner: "jest-serial-runner",
 
   // The test environment that will be used for testing
   testEnvironment: "node",

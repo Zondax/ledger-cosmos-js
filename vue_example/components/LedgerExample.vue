@@ -95,9 +95,7 @@ export default {
       }
 
       this.log("Response received!");
-      this.log(
-        `App Version ${response.major}.${response.minor}.${response.patch}`
-      );
+      this.log(`App Version ${response.major}.${response.minor}.${response.patch}`);
       this.log(`Device Locked: ${response.device_locked}`);
       this.log(`Test mode: ${response.test_mode}`);
       this.log("Full response:");
@@ -111,6 +109,7 @@ export default {
       const app = new CosmosApp(transport);
 
       // now it is possible to access all commands in the app
+      this.log("Please click in the device");
       const path = [44, 118, 5, 0, 3];
       const response = await app.getAddressAndPubKey(path, "cosmos");
       if (response.return_code !== 0x9000) {
@@ -148,8 +147,8 @@ export default {
       this.log(`Test mode: ${response.test_mode}`);
       this.log("Full response:");
       this.log(response);
-    }
-  }
+    },
+  },
 };
 </script>
 

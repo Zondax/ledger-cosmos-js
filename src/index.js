@@ -18,54 +18,9 @@
 import crypto from "crypto";
 import Ripemd160 from "ripemd160";
 import bech32 from "bech32";
-
-const CLA = 0x55;
-const CHUNK_SIZE = 250;
-const APP_KEY = "CSM";
-
-const INS = {
-  GET_VERSION: 0x00,
-  PUBLIC_KEY_SECP256K1: 0x01,
-  SIGN_SECP256K1: 0x02,
-  SHOW_ADDR_SECP256K1: 0x03,
-  GET_ADDR_SECP256K1: 0x04,
-};
-
-const PAYLOAD_TYPE = {
-  INIT: 0x00,
-  ADD: 0x01,
-  LAST: 0x02,
-};
-
-const ERROR_DESCRIPTION = {
-  1: "U2F: Unknown",
-  2: "U2F: Bad request",
-  3: "U2F: Configuration unsupported",
-  4: "U2F: Device Ineligible",
-  5: "U2F: Timeout",
-  14: "Timeout",
-  0x9000: "No errors",
-  0x9001: "Device is busy",
-  0x6802: "Error deriving keys",
-  0x6400: "Execution Error",
-  0x6700: "Wrong Length",
-  0x6982: "Empty Buffer",
-  0x6983: "Output buffer too small",
-  0x6984: "Data is invalid",
-  0x6985: "Conditions not satisfied",
-  0x6986: "Transaction rejected",
-  0x6a80: "Bad key handle",
-  0x6b00: "Invalid P1/P2",
-  0x6d00: "Instruction not supported",
-  0x6e00: "Cosmos app does not seem to be open",
-  0x6f00: "Unknown error",
-  0x6f01: "Sign/verify error",
-};
-
-function errorCodeToString(statusCode) {
-  if (statusCode in ERROR_DESCRIPTION) return ERROR_DESCRIPTION[statusCode];
-  return `Unknown Status Code: ${statusCode}`;
-}
+import { serializePathv1, signSendChunkv1 } from "./helperV1";
+import { serializePathv2, signSendChunkv2 } from "./helperV2";
+import { APP_KEY, CHUNK_SIZE, CLA, INS, errorCodeToString, getVersion, processErrorResponse } from "./common";
 
 export default class CosmosApp {
   constructor(transport, scrambleKey = APP_KEY) {
@@ -76,7 +31,7 @@ export default class CosmosApp {
     this.transport = transport;
     transport.decorateAppAPIMethods(
       this,
-      ["getVersion", "publicKey", "sign", "getAddressAndPubKey", "appInfo", "deviceInfo", "getBech32FromPK"],
+      ["getVersion", "sign", "getAddressAndPubKey", "appInfo", "deviceInfo", "getBech32FromPK"],
       scrambleKey,
     );
   }
@@ -103,45 +58,26 @@ export default class CosmosApp {
     return bech32.encode(hrp, bech32.toWords(hashRip));
   }
 
-  static serializePathv1(path) {
-    if (path == null || path.length < 3) {
-      throw new Error("Invalid path.");
+  async serializePath(path) {
+    this.versionResponse = await getVersion(this.transport);
+    switch (this.versionResponse.major) {
+      case 1:
+        return serializePathv1(path);
+      case 2:
+        return serializePathv2(path);
+      default:
+        return {
+          return_code: 0x6400,
+          error_message: "App Version is not supported",
+        };
     }
-    if (path.length > 10) {
-      throw new Error("Invalid path. Length should be <= 10");
-    }
-    const buf = Buffer.alloc(1 + 4 * path.length);
-    buf.writeUInt8(path.length, 0);
-    for (let i = 0; i < path.length; i += 1) {
-      let v = path[i];
-      if (i < 3) {
-        // eslint-disable-next-line no-bitwise
-        v |= 0x80000000; // Harden
-      }
-      buf.writeInt32LE(v, 1 + i * 4);
-    }
-    return buf;
   }
 
-  static serializePathv2(path) {
-    if (!path || path.length !== 5) {
-      throw new Error("Invalid path.");
-    }
+  async signGetChunks(path, message) {
+    const serializedPath = await this.serializePath(path);
 
-    const buf = Buffer.alloc(20);
-    buf.writeUInt32LE(0x80000000 + path[0], 0);
-    buf.writeUInt32LE(0x80000000 + path[1], 4);
-    buf.writeUInt32LE(0x80000000 + path[2], 8);
-    buf.writeUInt32LE(path[3], 12);
-    buf.writeUInt32LE(path[4], 16);
-
-    return buf;
-  }
-
-  static signGetChunksCommon(path, message) {
     const chunks = [];
-    chunks.push(path);
-
+    chunks.push(serializedPath);
     const buffer = Buffer.from(message);
 
     for (let i = 0; i < buffer.length; i += CHUNK_SIZE) {
@@ -155,47 +91,9 @@ export default class CosmosApp {
     return chunks;
   }
 
-  static signGetChunksv1(path, message) {
-    const bip32Path = CosmosApp.serializePathv1(path);
-    return CosmosApp.signGetChunksCommon(bip32Path, message);
-  }
-
-  static signGetChunksv2(path, message) {
-    const bip32Path = CosmosApp.serializePathv2(path);
-    return CosmosApp.signGetChunksCommon(bip32Path, message);
-  }
-
-  static processErrorResponse(response) {
-    return {
-      return_code: response.statusCode,
-      error_message: errorCodeToString(response.statusCode),
-    };
-  }
-
   async getVersion() {
-    return this.transport.send(CLA, INS.GET_VERSION, 0, 0).then(response => {
-      const errorCodeData = response.slice(-2);
-      const returnCode = errorCodeData[0] * 256 + errorCodeData[1];
-
-      let targetId = 0;
-      if (response.length >= 9) {
-        /* eslint-disable no-bitwise */
-        targetId = (response[5] << 24) + (response[6] << 16) + (response[7] << 8) + (response[8] << 0);
-        /* eslint-enable no-bitwise */
-      }
-
-      return {
-        return_code: returnCode,
-        error_message: errorCodeToString(returnCode),
-        // ///
-        test_mode: response[0] !== 0,
-        major: response[1],
-        minor: response[2],
-        patch: response[3],
-        device_locked: response[4] === 1,
-        target_id: targetId.toString(16),
-      };
-    }, CosmosApp.processErrorResponse);
+    this.versionResponse = await getVersion(this.transport);
+    return this.versionResponse;
   }
 
   async appInfo() {
@@ -245,7 +143,7 @@ export default class CosmosApp {
         // eslint-disable-next-line no-bitwise
         flag_pin_validated: (flagsValue & 128) !== 0,
       };
-    }, CosmosApp.processErrorResponse);
+    }, processErrorResponse);
   }
 
   async deviceInfo() {
@@ -291,11 +189,12 @@ export default class CosmosApp {
         flag,
         mcuVersion,
       };
-    }, CosmosApp.processErrorResponse);
+    }, processErrorResponse);
   }
 
   async publicKey(path) {
-    const data = Buffer.concat([CosmosApp.serializeHRP("cosmos"), CosmosApp.serializePath(path)]);
+    const serializedPath = await this.serializePath(path);
+    const data = Buffer.concat([CosmosApp.serializeHRP("cosmos"), serializedPath]);
     return this.transport.send(CLA, INS.GET_ADDR_SECP256K1, 0, 0, data, [0x9000]).then(response => {
       const errorCodeData = response.slice(-2);
       const returnCode = errorCodeData[0] * 256 + errorCodeData[1];
@@ -307,11 +206,12 @@ export default class CosmosApp {
         return_code: returnCode,
         error_message: errorCodeToString(returnCode),
       };
-    }, CosmosApp.processErrorResponse);
+    }, processErrorResponse);
   }
 
   async getAddressAndPubKey(path, hrp) {
-    const data = Buffer.concat([CosmosApp.serializeHRP(hrp), CosmosApp.serializePath(path)]);
+    const serializedPath = await this.serializePath(path);
+    const data = Buffer.concat([CosmosApp.serializeHRP(hrp), serializedPath]);
     return this.transport.send(CLA, INS.GET_ADDR_SECP256K1, 1, 0, data, [0x9000]).then(response => {
       const errorCodeData = response.slice(-2);
       const returnCode = errorCodeData[0] * 256 + errorCodeData[1];
@@ -325,99 +225,27 @@ export default class CosmosApp {
         return_code: returnCode,
         error_message: errorCodeToString(returnCode),
       };
-    }, CosmosApp.processErrorResponse);
+    }, processErrorResponse);
   }
 
-  // eslint-disable-next-line camelcase
-  async signSendChunkv1(chunk_idx, chunk_num, chunk) {
-    return this.transport
-      .send(CLA, INS.SIGN_SECP256K1, chunk_idx, chunk_num, chunk, [0x9000, 0x6a80])
-      .then(response => {
-        const errorCodeData = response.slice(-2);
-        const returnCode = errorCodeData[0] * 256 + errorCodeData[1];
-        let errorMessage = errorCodeToString(returnCode);
-
-        if (returnCode === 0x6a80) {
-          errorMessage = response.slice(0, response.length - 2).toString("ascii");
-        }
-
-        let signature = null;
-        if (response.length > 2) {
-          signature = response.slice(0, response.length - 2);
-        }
-
-        return {
-          signature,
-          return_code: returnCode,
-          error_message: errorMessage,
-        };
-      }, CosmosApp.processErrorResponse);
-  }
-
-  // eslint-disable-next-line camelcase
-  async signSendChunkv2(chunkIdx, chunkNum, chunk) {
-    let payloadType = PAYLOAD_TYPE.ADD;
-    if (chunkIdx === 1) {
-      payloadType = PAYLOAD_TYPE.INIT;
-    }
-    if (chunkIdx === chunkNum) {
-      payloadType = PAYLOAD_TYPE.LAST;
-    }
-
-    return this.transport
-      .send(CLA, INS.SIGN_ED25519, payloadType, 0, chunk, [0x9000, 0x6984, 0x6a80])
-      .then(response => {
-        const errorCodeData = response.slice(-2);
-        const returnCode = errorCodeData[0] * 256 + errorCodeData[1];
-        let errorMessage = errorCodeToString(returnCode);
-
-        if (returnCode === 0x6a80) {
-          errorMessage = response.slice(0, response.length - 2).toString("ascii");
-        }
-
-        let signature = null;
-        if (response.length > 2) {
-          signature = response.slice(0, response.length - 2);
-        }
-
-        return {
-          signature,
-          return_code: returnCode,
-          error_message: errorMessage,
-        };
-      }, CosmosApp.processErrorResponse);
-  }
-
-  async sign(path, message) {
-    const versionResponse = this.getVersion();
-    if (versionResponse.return_code !== 0x9000) {
-      return {
-        return_code: versionResponse.return_code,
-        error_message: versionResponse.error_message,
-      };
-    }
-
-    let signSendChunks = this.signSendChunkv1;
-    let signGetChunks = CosmosApp.signGetChunksv1;
-
-    switch (versionResponse.major) {
+  async signSendChunk(chunkIdx, chunkNum, chunk) {
+    switch (this.versionResponse.major) {
       case 1:
-        signSendChunks = this.signSendChunkv1;
-        signGetChunks = CosmosApp.signGetChunksv1;
-        break;
+        return signSendChunkv1(this, chunkIdx, chunkNum, chunk);
       case 2:
-        signSendChunks = this.signSendChunkv2;
-        signGetChunks = CosmosApp.signGetChunksv2;
-        break;
+        return signSendChunkv2(this, chunkIdx, chunkNum, chunk);
       default:
         return {
           return_code: 0x6400,
           error_message: "App Version is not supported",
         };
     }
+  }
 
-    const chunks = signGetChunks(path, message);
-    return signSendChunks(1, chunks.length, chunks[0], [0x9000]).then(async response => {
+  async sign(path, message) {
+    const chunks = await this.signGetChunks(path, message);
+
+    return this.signSendChunk(1, chunks.length, chunks[0], [0x9000]).then(async response => {
       let result = {
         return_code: response.return_code,
         error_message: response.error_message,
@@ -426,7 +254,7 @@ export default class CosmosApp {
 
       for (let i = 1; i < chunks.length; i += 1) {
         // eslint-disable-next-line no-await-in-loop
-        result = await signSendChunks(1 + i, chunks.length, chunks[i]);
+        result = await this.signSendChunk(1 + i, chunks.length, chunks[i]);
         if (result.return_code !== 0x9000) {
           break;
         }
@@ -438,6 +266,6 @@ export default class CosmosApp {
         // ///
         signature: result.signature,
       };
-    }, CosmosApp.processErrorResponse);
+    }, processErrorResponse);
   }
 }

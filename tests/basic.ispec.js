@@ -39,7 +39,7 @@ test("publicKey", async () => {
   expect(resp).toHaveProperty("compressed_pk");
   expect(resp.compressed_pk.length).toEqual(33);
   expect(resp.compressed_pk.toString("hex")).toEqual(
-    "034fef9cd7c4c63588d3b03feb5281b9d232cba34d6f3d71aee59211ffbfe1fe87"
+    "034fef9cd7c4c63588d3b03feb5281b9d232cba34d6f3d71aee59211ffbfe1fe87",
   );
 });
 
@@ -61,9 +61,7 @@ test("getAddressAndPubKey", async () => {
   expect(resp).toHaveProperty("bech32_address");
   expect(resp).toHaveProperty("compressed_pk");
 
-  expect(resp.bech32_address).toEqual(
-    "cosmos1wkd9tfm5pqvhhaxq77wv9tvjcsazuaykwsld65"
-  );
+  expect(resp.bech32_address).toEqual("cosmos1wkd9tfm5pqvhhaxq77wv9tvjcsazuaykwsld65");
   expect(resp.compressed_pk.length).toEqual(33);
 });
 
@@ -113,19 +111,7 @@ test("sign_and_verify", async () => {
 
   // Derivation path. First 3 items are automatically hardened!
   const path = [44, 118, 0, 0, 0];
-  const message =
-    "{" +
-    '"account_number":"6571",' +
-    '"chain_id":"cosmoshub-2",' +
-    '"fee":{"amount":[{"amount":"5000","denom":"uatom"}],"gas":"200000"},' +
-    '"memo":"Delegated with Ledger from union.market",' +
-    '"msgs":[' +
-    "{" +
-    '"type":"cosmos-sdk/MsgDelegate",' +
-    '"value":{"amount":{"amount":"1000000","denom":"uatom"},"delegator_address":"cosmos102hty0jv2s29lyc4u0tv97z9v298e24t3vwtpl","validator_address":"cosmosvaloper1grgelyng2v6v3t8z87wu3sxgt9m5s03xfytvz7"}' +
-    "}" +
-    "]," +
-    '"sequence":"0"}';
+  const message = String.raw`{"account_number":"6571","chain_id":"cosmoshub-2","fee":{"amount":[{"amount":"5000","denom":"uatom"}],"gas":"200000"},"memo":"Delegated with Ledger from union.market","msgs":[{"type":"cosmos-sdk/MsgDelegate","value":{"amount":{"amount":"1000000","denom":"uatom"},"delegator_address":"cosmos102hty0jv2s29lyc4u0tv97z9v298e24t3vwtpl","validator_address":"cosmosvaloper1grgelyng2v6v3t8z87wu3sxgt9m5s03xfytvz7"}}],"sequence":"0"}`;
 
   const responsePk = await app.publicKey(path);
   const responseSign = await app.sign(path, message);
@@ -144,11 +130,38 @@ test("sign_and_verify", async () => {
 
   const signatureDER = responseSign.signature;
   const signature = secp256k1.signatureImport(signatureDER);
-  const signatureOk = secp256k1.verify(
-    msgHash,
-    signature,
-    responsePk.compressed_pk
-  );
+  const signatureOk = secp256k1.verify(msgHash, signature, responsePk.compressed_pk);
+  expect(signatureOk).toEqual(true);
+});
+
+test("sign_empty_memo", async () => {
+  jest.setTimeout(60000);
+
+  const transport = await TransportNodeHid.create(1000);
+  const app = new CosmosApp(transport);
+
+  // Derivation path. First 3 items are automatically hardened!
+  const path = [44, 118, 0, 0, 0];
+  const message = String.raw`{"account_number":"0","chain_id":"test-chain-1","fee":{"amount":[{"amount":"5","denom":"photon"}],"gas":"10000"},"memo":"","msgs":[{"inputs":[{"address":"cosmosaccaddr1d9h8qat5e4ehc5","coins":[{"amount":"10","denom":"atom"}]}],"outputs":[{"address":"cosmosaccaddr1da6hgur4wse3jx32","coins":[{"amount":"10","denom":"atom"}]}]}],"sequence":"1"}`;
+
+  const responsePk = await app.publicKey(path);
+  const responseSign = await app.sign(path, message);
+
+  console.log(responsePk);
+  console.log(responseSign);
+
+  expect(responsePk.return_code).toEqual(0x9000);
+  expect(responsePk.error_message).toEqual("No errors");
+  expect(responseSign.return_code).toEqual(0x9000);
+  expect(responseSign.error_message).toEqual("No errors");
+
+  // Check signature is valid
+  const hash = crypto.createHash("sha256");
+  const msgHash = hash.update(message).digest();
+
+  const signatureDER = responseSign.signature;
+  const signature = secp256k1.signatureImport(signatureDER);
+  const signatureOk = secp256k1.verify(msgHash, signature, responsePk.compressed_pk);
   expect(signatureOk).toEqual(true);
 });
 
@@ -205,9 +218,7 @@ test("sign_big_tx", async () => {
   expect(responsePk.return_code).toEqual(0x9000);
   expect(responsePk.error_message).toEqual("No errors");
   expect(responseSign.return_code).toEqual(0x6a80);
-  expect(responseSign.error_message).toEqual(
-    "NOMEM: JSON string contains too many tokens"
-  );
+  expect(responseSign.error_message).toEqual("NOMEM: JSON string contains too many tokens");
 });
 
 test("sign_invalid", async () => {
