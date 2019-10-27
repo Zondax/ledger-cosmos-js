@@ -234,6 +234,6 @@ test("sign_invalid", async () => {
   const responseSign = await app.sign(path, invalidMessage);
 
   console.log(responseSign);
-  expect(responseSign.return_code).toEqual(0x6a80);
-  expect(responseSign.error_message).toEqual("JSON Missing account_number");
+  expect(responseSign.return_code).toEqual(0x6984);
+  expect(responseSign.error_message).toEqual("Data is invalid : JSON Missing account number");
 });
