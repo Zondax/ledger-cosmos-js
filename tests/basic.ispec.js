@@ -218,7 +218,19 @@ test("sign_big_tx", async () => {
   expect(responsePk.return_code).toEqual(0x9000);
   expect(responsePk.error_message).toEqual("No errors");
   expect(responseSign.return_code).toEqual(0x6a80);
-  expect(responseSign.error_message).toEqual("NOMEM: JSON string contains too many tokens");
+
+  switch (app.versionResponse.major) {
+    case 1:
+      expect(responseSign.error_message).toEqual(
+        "Bad key handle : NOMEM: JSON string contains too many tokens",
+      );
+      break;
+    case 2:
+      expect(responseSign.error_message).toEqual("NOMEM: JSON string contains too many tokens");
+      break;
+    default:
+      expect.fail("Version not supported");
+  }
 });
 
 test("sign_invalid", async () => {
@@ -234,6 +246,17 @@ test("sign_invalid", async () => {
   const responseSign = await app.sign(path, invalidMessage);
 
   console.log(responseSign);
-  expect(responseSign.return_code).toEqual(0x6984);
-  expect(responseSign.error_message).toEqual("Data is invalid : JSON Missing account number");
+
+  switch (app.versionResponse.major) {
+    case 1:
+      expect(responseSign.return_code).toEqual(0x6a80);
+      expect(responseSign.error_message).toEqual("Bad key handle : JSON Missing account_number");
+      break;
+    case 2:
+      expect(responseSign.return_code).toEqual(0x6984);
+      expect(responseSign.error_message).toEqual("Data is invalid : JSON Missing account number");
+      break;
+    default:
+      expect.fail("Version not supported");
+  }
 });

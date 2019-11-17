@@ -18,8 +18,8 @@
 import crypto from "crypto";
 import Ripemd160 from "ripemd160";
 import bech32 from "bech32";
-import { serializePathv1, signSendChunkv1 } from "./helperV1";
-import { serializePathv2, signSendChunkv2 } from "./helperV2";
+import { publicKeyv1, serializePathv1, signSendChunkv1 } from "./helperV1";
+import { publicKeyv2, serializePathv2, signSendChunkv2 } from "./helperV2";
 import { APP_KEY, CHUNK_SIZE, CLA, INS, errorCodeToString, getVersion, processErrorResponse } from "./common";
 
 export default class CosmosApp {
@@ -194,19 +194,20 @@ export default class CosmosApp {
 
   async publicKey(path) {
     const serializedPath = await this.serializePath(path);
-    const data = Buffer.concat([CosmosApp.serializeHRP("cosmos"), serializedPath]);
-    return this.transport.send(CLA, INS.GET_ADDR_SECP256K1, 0, 0, data, [0x9000]).then(response => {
-      const errorCodeData = response.slice(-2);
-      const returnCode = errorCodeData[0] * 256 + errorCodeData[1];
-      const compressedPk = Buffer.from(response.slice(0, 33));
 
-      return {
-        pk: "OBSOLETE PROPERTY",
-        compressed_pk: compressedPk,
-        return_code: returnCode,
-        error_message: errorCodeToString(returnCode),
-      };
-    }, processErrorResponse);
+    switch (this.versionResponse.major) {
+      case 1:
+        return publicKeyv1(this, serializedPath);
+      case 2: {
+        const data = Buffer.concat([CosmosApp.serializeHRP("cosmos"), serializedPath]);
+        return publicKeyv2(this, data);
+      }
+      default:
+        return {
+          return_code: 0x6400,
+          error_message: "App Version is not supported",
+        };
+    }
   }
 
   async getAddressAndPubKey(path, hrp) {
