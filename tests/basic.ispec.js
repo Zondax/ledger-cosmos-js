@@ -27,12 +27,7 @@ test("publicKey", async () => {
   // Derivation path. First 3 items are automatically hardened!
   const path = [44, 118, 0, 0, 0];
 
-  let elapsed = new Date().getTime();
   const resp = await app.publicKey(path);
-  elapsed = new Date().getTime() - elapsed;
-  console.log("Elapsed: ", elapsed);
-
-  console.log(resp);
 
   expect(resp.return_code).toEqual(0x9000);
   expect(resp.error_message).toEqual("No errors");
@@ -217,16 +212,17 @@ test("sign_big_tx", async () => {
 
   expect(responsePk.return_code).toEqual(0x9000);
   expect(responsePk.error_message).toEqual("No errors");
-  expect(responseSign.return_code).toEqual(0x6a80);
 
   switch (app.versionResponse.major) {
     case 1:
+      expect(responseSign.return_code).toEqual(0x6a80);
       expect(responseSign.error_message).toEqual(
         "Bad key handle : NOMEM: JSON string contains too many tokens",
       );
       break;
     case 2:
-      expect(responseSign.error_message).toEqual("NOMEM: JSON string contains too many tokens");
+      expect(responseSign.return_code).toEqual(0x6984);
+      expect(responseSign.error_message).toEqual("Data is invalid : JSON. Too many tokens");
       break;
     default:
       expect.fail("Version not supported");
