@@ -15,6 +15,15 @@ export const PAYLOAD_TYPE = {
   LAST: 0x02,
 };
 
+export const P1_VALUES = {
+  ONLY_RETRIEVE: 0x00,
+  SHOW_ADDRESS_IN_DEVICE: 0x01,
+};
+
+export const ERROR_CODE = {
+  NoError: 0x9000,
+};
+
 const ERROR_DESCRIPTION = {
   1: "U2F: Unknown",
   2: "U2F: Bad request",
@@ -45,10 +54,36 @@ export function errorCodeToString(statusCode) {
   return `Unknown Status Code: ${statusCode}`;
 }
 
+function isDict(v) {
+  return typeof v === "object" && v !== null && !(v instanceof Array) && !(v instanceof Date);
+}
+
 export function processErrorResponse(response) {
+  if (response) {
+    if (isDict(response)) {
+      if (Object.prototype.hasOwnProperty.call(response, "statusCode")) {
+        return {
+          return_code: response.statusCode,
+          error_message: errorCodeToString(response.statusCode),
+        };
+      }
+
+      if (
+        Object.prototype.hasOwnProperty.call(response, "return_code") &&
+        Object.prototype.hasOwnProperty.call(response, "error_message")
+      ) {
+        return response;
+      }
+    }
+    return {
+      return_code: 0xffff,
+      error_message: response.toString(),
+    };
+  }
+
   return {
-    return_code: response.statusCode,
-    error_message: errorCodeToString(response.statusCode),
+    return_code: 0xffff,
+    error_message: response.toString(),
   };
 }
 

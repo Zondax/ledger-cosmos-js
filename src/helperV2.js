@@ -1,5 +1,5 @@
 import { signSendChunkv1 } from "./helperV1";
-import { CLA, errorCodeToString, INS, PAYLOAD_TYPE, processErrorResponse } from "./common";
+import { CLA, ERROR_CODE, errorCodeToString, INS, PAYLOAD_TYPE, processErrorResponse } from "./common";
 
 export function serializePathv2(path) {
   if (!path || path.length !== 5) {
@@ -29,7 +29,7 @@ export async function signSendChunkv2(app, chunkIdx, chunkNum, chunk) {
 }
 
 export async function publicKeyv2(app, data) {
-  return app.transport.send(CLA, INS.GET_ADDR_SECP256K1, 0, 0, data, [0x9000]).then(response => {
+  return app.transport.send(CLA, INS.GET_ADDR_SECP256K1, 0, 0, data, [ERROR_CODE.NoError]).then(response => {
     const errorCodeData = response.slice(-2);
     const returnCode = errorCodeData[0] * 256 + errorCodeData[1];
     const compressedPk = Buffer.from(response.slice(0, 33));

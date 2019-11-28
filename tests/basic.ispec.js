@@ -3,6 +3,7 @@ import TransportNodeHid from "@ledgerhq/hw-transport-node-hid";
 import { expect, test } from "jest";
 import secp256k1 from "secp256k1/elliptic";
 import crypto from "crypto";
+import { ERROR_CODE } from "../src/common";
 
 test("get version", async () => {
   const transport = await TransportNodeHid.create(1000);
@@ -11,7 +12,7 @@ test("get version", async () => {
   const resp = await app.getVersion();
   console.log(resp);
 
-  expect(resp.return_code).toEqual(0x9000);
+  expect(resp.return_code).toEqual(ERROR_CODE.NoError);
   expect(resp.error_message).toEqual("No errors");
   expect(resp).toHaveProperty("test_mode");
   expect(resp).toHaveProperty("major");
@@ -29,7 +30,7 @@ test("publicKey", async () => {
 
   const resp = await app.publicKey(path);
 
-  expect(resp.return_code).toEqual(0x9000);
+  expect(resp.return_code).toEqual(ERROR_CODE.NoError);
   expect(resp.error_message).toEqual("No errors");
   expect(resp).toHaveProperty("compressed_pk");
   expect(resp.compressed_pk.length).toEqual(33);
@@ -50,7 +51,7 @@ test("getAddressAndPubKey", async () => {
 
   console.log(resp);
 
-  expect(resp.return_code).toEqual(0x9000);
+  expect(resp.return_code).toEqual(ERROR_CODE.NoError);
   expect(resp.error_message).toEqual("No errors");
 
   expect(resp).toHaveProperty("bech32_address");
@@ -68,7 +69,7 @@ test("appInfo", async () => {
 
   console.log(resp);
 
-  expect(resp.return_code).toEqual(0x9000);
+  expect(resp.return_code).toEqual(ERROR_CODE.NoError);
   expect(resp.error_message).toEqual("No errors");
 
   expect(resp).toHaveProperty("appName");
@@ -89,7 +90,7 @@ test("deviceInfo", async () => {
 
   console.log(resp);
 
-  expect(resp.return_code).toEqual(0x9000);
+  expect(resp.return_code).toEqual(ERROR_CODE.NoError);
   expect(resp.error_message).toEqual("No errors");
 
   expect(resp).toHaveProperty("targetId");
@@ -109,15 +110,15 @@ test("sign_and_verify", async () => {
   const message = String.raw`{"account_number":"6571","chain_id":"cosmoshub-2","fee":{"amount":[{"amount":"5000","denom":"uatom"}],"gas":"200000"},"memo":"Delegated with Ledger from union.market","msgs":[{"type":"cosmos-sdk/MsgDelegate","value":{"amount":{"amount":"1000000","denom":"uatom"},"delegator_address":"cosmos102hty0jv2s29lyc4u0tv97z9v298e24t3vwtpl","validator_address":"cosmosvaloper1grgelyng2v6v3t8z87wu3sxgt9m5s03xfytvz7"}}],"sequence":"0"}`;
 
   const responsePk = await app.publicKey(path);
-  const responseSign = await app.sign(path, message);
-
   console.log(responsePk);
-  console.log(responseSign);
-
-  expect(responsePk.return_code).toEqual(0x9000);
+  expect(responsePk.return_code).toEqual(ERROR_CODE.NoError);
   expect(responsePk.error_message).toEqual("No errors");
-  expect(responseSign.return_code).toEqual(0x9000);
+
+  const responseSign = await app.sign(path, message);
+  console.log(responseSign);
+  expect(responseSign.return_code).toEqual(ERROR_CODE.NoError);
   expect(responseSign.error_message).toEqual("No errors");
+
 
   // Check signature is valid
   const hash = crypto.createHash("sha256");
@@ -145,9 +146,9 @@ test("sign_empty_memo", async () => {
   console.log(responsePk);
   console.log(responseSign);
 
-  expect(responsePk.return_code).toEqual(0x9000);
+  expect(responsePk.return_code).toEqual(ERROR_CODE.NoError);
   expect(responsePk.error_message).toEqual("No errors");
-  expect(responseSign.return_code).toEqual(0x9000);
+  expect(responseSign.return_code).toEqual(ERROR_CODE.NoError);
   expect(responseSign.error_message).toEqual("No errors");
 
   // Check signature is valid
@@ -210,7 +211,7 @@ test("sign_big_tx", async () => {
   console.log(responsePk);
   console.log(responseSign);
 
-  expect(responsePk.return_code).toEqual(0x9000);
+  expect(responsePk.return_code).toEqual(ERROR_CODE.NoError);
   expect(responsePk.error_message).toEqual("No errors");
 
   switch (app.versionResponse.major) {
@@ -253,6 +254,7 @@ test("sign_invalid", async () => {
       expect(responseSign.error_message).toEqual("Data is invalid : JSON Missing account number");
       break;
     default:
-      expect.fail("Version not supported");
+      console.log("Version not supported");
+      expect(false).toEqual(true);
   }
 });
