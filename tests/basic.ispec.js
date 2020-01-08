@@ -119,7 +119,6 @@ test("sign_and_verify", async () => {
   expect(responseSign.return_code).toEqual(ERROR_CODE.NoError);
   expect(responseSign.error_message).toEqual("No errors");
 
-
   // Check signature is valid
   const hash = crypto.createHash("sha256");
   const msgHash = hash.update(message).digest();
