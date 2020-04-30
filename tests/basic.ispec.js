@@ -129,6 +129,37 @@ test("sign_and_verify", async () => {
   expect(signatureOk).toEqual(true);
 });
 
+test("sign_tiny_memo", async () => {
+  jest.setTimeout(60000);
+
+  const transport = await TransportNodeHid.create(1000);
+  const app = new CosmosApp(transport);
+
+  // Derivation path. First 3 items are automatically hardened!
+  const path = [44, 118, 0, 0, 0];
+  const message = String.raw`{"account_number":"0","chain_id":"test-chain-1","fee":{"amount":[{"amount":"5","denom":"photon"}],"gas":"10000"},"memo":"A","msgs":[{"inputs":[{"address":"cosmosaccaddr1d9h8qat5e4ehc5","coins":[{"amount":"10","denom":"atom"}]}],"outputs":[{"address":"cosmosaccaddr1da6hgur4wse3jx32","coins":[{"amount":"10","denom":"atom"}]}]}],"sequence":"1"}`;
+
+  const responsePk = await app.publicKey(path);
+  const responseSign = await app.sign(path, message);
+
+  console.log(responsePk);
+  console.log(responseSign);
+
+  expect(responsePk.return_code).toEqual(ERROR_CODE.NoError);
+  expect(responsePk.error_message).toEqual("No errors");
+  expect(responseSign.return_code).toEqual(ERROR_CODE.NoError);
+  expect(responseSign.error_message).toEqual("No errors");
+
+  // Check signature is valid
+  const hash = crypto.createHash("sha256");
+  const msgHash = hash.update(message).digest();
+
+  const signatureDER = responseSign.signature;
+  const signature = secp256k1.signatureImport(signatureDER);
+  const signatureOk = secp256k1.verify(msgHash, signature, responsePk.compressed_pk);
+  expect(signatureOk).toEqual(true);
+});
+
 test("sign_empty_memo", async () => {
   jest.setTimeout(60000);
 
@@ -138,6 +169,84 @@ test("sign_empty_memo", async () => {
   // Derivation path. First 3 items are automatically hardened!
   const path = [44, 118, 0, 0, 0];
   const message = String.raw`{"account_number":"0","chain_id":"test-chain-1","fee":{"amount":[{"amount":"5","denom":"photon"}],"gas":"10000"},"memo":"","msgs":[{"inputs":[{"address":"cosmosaccaddr1d9h8qat5e4ehc5","coins":[{"amount":"10","denom":"atom"}]}],"outputs":[{"address":"cosmosaccaddr1da6hgur4wse3jx32","coins":[{"amount":"10","denom":"atom"}]}]}],"sequence":"1"}`;
+
+  const responsePk = await app.publicKey(path);
+  const responseSign = await app.sign(path, message);
+
+  console.log(responsePk);
+  console.log(responseSign);
+
+  expect(responsePk.return_code).toEqual(ERROR_CODE.NoError);
+  expect(responsePk.error_message).toEqual("No errors");
+  expect(responseSign.return_code).toEqual(ERROR_CODE.NoError);
+  expect(responseSign.error_message).toEqual("No errors");
+
+  // Check signature is valid
+  const hash = crypto.createHash("sha256");
+  const msgHash = hash.update(message).digest();
+
+  const signatureDER = responseSign.signature;
+  const signature = secp256k1.signatureImport(signatureDER);
+  const signatureOk = secp256k1.verify(msgHash, signature, responsePk.compressed_pk);
+  expect(signatureOk).toEqual(true);
+});
+
+test("sign_withdraw", async () => {
+  jest.setTimeout(60000);
+
+  const transport = await TransportNodeHid.create(1000);
+  const app = new CosmosApp(transport);
+
+  // Derivation path. First 3 items are automatically hardened!
+  const path = [44, 118, 0, 0, 0];
+
+  const tx_str = {
+    account_number: "108",
+    chain_id: "cosmoshub-2",
+    fee: {
+      amount: [
+        {
+          amount: "600",
+          denom: "uatom",
+        },
+      ],
+      gas: "200000",
+    },
+    memo: "",
+    msgs: [
+      {
+        type: "cosmos-sdk/MsgWithdrawDelegationReward",
+        value: {
+          delegator_address: "cosmos1kky4yzth6gdrm8ga5zlfwhav33yr7hl87jycah",
+          validator_address: "cosmosvaloper1kn3wugetjuy4zetlq6wadchfhvu3x740ae6z6x",
+        },
+      },
+      {
+        type: "cosmos-sdk/MsgWithdrawDelegationReward",
+        value: {
+          delegator_address: "cosmos1kky4yzth6gdrm8ga5zlfwhav33yr7hl87jycah",
+          validator_address: "cosmosvaloper1sjllsnramtg3ewxqwwrwjxfgc4n4ef9u2lcnj0",
+        },
+      },
+      {
+        type: "cosmos-sdk/MsgWithdrawDelegationReward",
+        value: {
+          delegator_address: "cosmos1kky4yzth6gdrm8ga5zlfwhav33yr7hl87jycah",
+          validator_address: "cosmosvaloper1ey69r37gfxvxg62sh4r0ktpuc46pzjrm873ae8",
+        },
+      },
+      {
+        type: "cosmos-sdk/MsgWithdrawDelegationReward",
+        value: {
+          delegator_address: "cosmos1kky4yzth6gdrm8ga5zlfwhav33yr7hl87jycah",
+          validator_address: "cosmosvaloper1648ynlpdw7fqa2axt0w2yp3fk542junl7rsvq6",
+        },
+      },
+    ],
+    sequence: "106",
+  };
+
+  const message = JSON.stringify(tx_str);
 
   const responsePk = await app.publicKey(path);
   const responseSign = await app.sign(path, message);

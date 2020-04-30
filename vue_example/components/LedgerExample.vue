@@ -12,6 +12,10 @@
       Get Version
     </button>
 
+    <button @click="appInfo">
+      AppInfo
+    </button>
+
     <button @click="getPublicKey">
       Get pubkey only
     </button>
@@ -110,6 +114,23 @@ export default {
       this.log(`Device Locked: ${response.device_locked}`);
       this.log(`Test mode: ${response.test_mode}`);
       this.log("Full response:");
+      this.log(response);
+    },
+    async appInfo() {
+      this.deviceLog = [];
+
+      // Given a transport (U2F/HIF/WebUSB) it is possible instantiate the app
+      const transport = await this.getTransport();
+      const app = new CosmosApp(transport);
+
+      // now it is possible to access all commands in the app
+      const response = await app.appInfo();
+      if (response.return_code !== 0x9000) {
+        this.log(`Error [${response.return_code}] ${response.error_message}`);
+        return;
+      }
+
+      this.log("Response received!");
       this.log(response);
     },
     async getPublicKey() {

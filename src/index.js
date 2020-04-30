@@ -256,45 +256,55 @@ export default class CosmosApp {
                 error_message: errorCodeToString(returnCode),
               };
             }, processErrorResponse);
-        }).catch(err => processErrorResponse(err));
+        })
+        .catch(err => processErrorResponse(err));
+    } catch (e) {
+      return processErrorResponse(e);
+    }
   }
 
   async showAddressAndPubKey(path, hrp) {
-      try {
-        return this.serializePath(path)
-          .then(serializedPath => {
-            const data = Buffer.concat([CosmosApp.serializeHRP(hrp), serializedPath]);
-            return this.transport
-              .send(CLA, INS.GET_ADDR_SECP256K1, P1_VALUES.SHOW_ADDRESS_IN_DEVICE, 0, data, [ERROR_CODE.NoError])
-              .then(response => {
-                const errorCodeData = response.slice(-2);
-                const returnCode = errorCodeData[0] * 256 + errorCodeData[1];
+    try {
+      return this.serializePath(path)
+        .then(serializedPath => {
+          const data = Buffer.concat([CosmosApp.serializeHRP(hrp), serializedPath]);
+          return this.transport
+            .send(CLA, INS.GET_ADDR_SECP256K1, P1_VALUES.SHOW_ADDRESS_IN_DEVICE, 0, data, [
+              ERROR_CODE.NoError,
+            ])
+            .then(response => {
+              const errorCodeData = response.slice(-2);
+              const returnCode = errorCodeData[0] * 256 + errorCodeData[1];
 
-                const compressedPk = Buffer.from(response.slice(0, 33));
-                const bech32Address = Buffer.from(response.slice(33, -2)).toString();
+              const compressedPk = Buffer.from(response.slice(0, 33));
+              const bech32Address = Buffer.from(response.slice(33, -2)).toString();
 
-                return {
-                  bech32_address: bech32Address,
-                  compressed_pk: compressedPk,
-                  return_code: returnCode,
-                  error_message: errorCodeToString(returnCode),
-                };
-              }, processErrorResponse);
-          }).catch(err => processErrorResponse(err));
+              return {
+                bech32_address: bech32Address,
+                compressed_pk: compressedPk,
+                return_code: returnCode,
+                error_message: errorCodeToString(returnCode),
+              };
+            }, processErrorResponse);
+        })
+        .catch(err => processErrorResponse(err));
+    } catch (e) {
+      return processErrorResponse(e);
+    }
   }
 
   async signSendChunk(chunkIdx, chunkNum, chunk) {
-      switch (this.versionResponse.major) {
-        case 1:
-          return signSendChunkv1(this, chunkIdx, chunkNum, chunk);
-        case 2:
-          return signSendChunkv2(this, chunkIdx, chunkNum, chunk);
-        default:
-          return {
-            return_code: 0x6400,
-            error_message: "App Version is not supported",
-          };
-      }
+    switch (this.versionResponse.major) {
+      case 1:
+        return signSendChunkv1(this, chunkIdx, chunkNum, chunk);
+      case 2:
+        return signSendChunkv2(this, chunkIdx, chunkNum, chunk);
+      default:
+        return {
+          return_code: 0x6400,
+          error_message: "App Version is not supported",
+        };
+    }
   }
 
   async sign(path, message) {
