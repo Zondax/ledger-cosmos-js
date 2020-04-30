@@ -61,6 +61,28 @@ test("getAddressAndPubKey", async () => {
   expect(resp.compressed_pk.length).toEqual(33);
 });
 
+test("showAddressAndPubKey", async () => {
+  jest.setTimeout(60000);
+
+  const transport = await TransportNodeHid.create(1000);
+  const app = new CosmosApp(transport);
+
+  // Derivation path. First 3 items are automatically hardened!
+  const path = [44, 118, 5, 0, 3];
+  const resp = await app.showAddressAndPubKey(path, "cosmos");
+
+  console.log(resp);
+
+  expect(resp.return_code).toEqual(ERROR_CODE.NoError);
+  expect(resp.error_message).toEqual("No errors");
+
+  expect(resp).toHaveProperty("bech32_address");
+  expect(resp).toHaveProperty("compressed_pk");
+
+  expect(resp.bech32_address).toEqual("cosmos1wkd9tfm5pqvhhaxq77wv9tvjcsazuaykwsld65");
+  expect(resp.compressed_pk.length).toEqual(33);
+});
+
 test("appInfo", async () => {
   const transport = await TransportNodeHid.create(1000);
   const app = new CosmosApp(transport);
