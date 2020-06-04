@@ -1,7 +1,7 @@
 {
-  "name": "ledger-terra-js",
-  "version": "1.0.0",
-  "description": "Node API for Terra App (Ledger Nano S/X)",
+  "name": "@terra-money/ledger-terra-js",
+  "version": "1.0.1",
+  "description": "API for Terra App (Ledger Nano S/X)",
   "main": "./dist/index.js",
   "repository": {
     "type": "git",
