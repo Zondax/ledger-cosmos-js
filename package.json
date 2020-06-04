@@ -1,24 +1,25 @@
 {
-  "name": "ledger-cosmos-js",
-  "version": "0.0.0",
-  "description": "Node API for Cosmos App (Ledger Nano S/X)",
+  "name": "ledger-terra-js",
+  "version": "1.0.0",
+  "description": "Node API for Terra App (Ledger Nano S/X)",
   "main": "./dist/index.js",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/zondax/ledger-cosmos-js.git"
+    "url": "git+https://github.com/terra-project/ledger-terra-js.git"
   },
   "keywords": [
     "Ledger",
     "Javascript",
     "Tendermint",
-    "Cosmos"
+    "Cosmos",
+    "Terra"
   ],
   "author": "ZondaX GmbH",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/zondax/ledger-cosmos-js/issues"
+    "url": "https://github.com/terra-project/ledger-terra-js/issues"
   },
-  "homepage": "https://github.com/zondax/ledger-cosmos-js",
+  "homepage": "https://github.com/terra-project/ledger-terra-js",
   "dependencies": {
     "@babel/runtime": "^7.7.6",
     "@ledgerhq/hw-transport": "^4.78.0",
