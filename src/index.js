@@ -18,8 +18,7 @@
 import crypto from "crypto";
 import Ripemd160 from "ripemd160";
 import bech32 from "bech32";
-import { publicKeyv1, serializePathv1, signSendChunkv1 } from "./helperV1";
-import { publicKeyv2, serializePathv2, signSendChunkv2 } from "./helperV2";
+import { publicKey, serializePath, signSendChunk } from "./helper";
 import {
   APP_KEY,
   CHUNK_SIZE,
@@ -32,7 +31,7 @@ import {
   P1_VALUES,
 } from "./common";
 
-export default class CosmosApp {
+export default class TerraApp {
   constructor(transport, scrambleKey = APP_KEY) {
     if (!transport) {
       throw new Error("Transport has not been defined");
@@ -77,9 +76,7 @@ export default class CosmosApp {
 
     switch (this.versionResponse.major) {
       case 1:
-        return serializePathv1(path);
-      case 2:
-        return serializePathv2(path);
+        return serializePath(path);
       default:
         return {
           return_code: 0x6400,
@@ -219,11 +216,8 @@ export default class CosmosApp {
 
       switch (this.versionResponse.major) {
         case 1:
-          return publicKeyv1(this, serializedPath);
-        case 2: {
-          const data = Buffer.concat([CosmosApp.serializeHRP("cosmos"), serializedPath]);
-          return publicKeyv2(this, data);
-        }
+          const data = Buffer.concat([TerraApp.serializeHRP("terra"), serializedPath]);
+          return publicKey(this, data);
         default:
           return {
             return_code: 0x6400,
@@ -239,7 +233,7 @@ export default class CosmosApp {
     try {
       return this.serializePath(path)
         .then(serializedPath => {
-          const data = Buffer.concat([CosmosApp.serializeHRP(hrp), serializedPath]);
+          const data = Buffer.concat([TerraApp.serializeHRP(hrp), serializedPath]);
           return this.transport
             .send(CLA, INS.GET_ADDR_SECP256K1, P1_VALUES.ONLY_RETRIEVE, 0, data, [ERROR_CODE.NoError])
             .then(response => {
@@ -267,7 +261,7 @@ export default class CosmosApp {
     try {
       return this.serializePath(path)
         .then(serializedPath => {
-          const data = Buffer.concat([CosmosApp.serializeHRP(hrp), serializedPath]);
+          const data = Buffer.concat([TerraApp.serializeHRP(hrp), serializedPath]);
           return this.transport
             .send(CLA, INS.GET_ADDR_SECP256K1, P1_VALUES.SHOW_ADDRESS_IN_DEVICE, 0, data, [
               ERROR_CODE.NoError,
@@ -296,9 +290,7 @@ export default class CosmosApp {
   async signSendChunk(chunkIdx, chunkNum, chunk) {
     switch (this.versionResponse.major) {
       case 1:
-        return signSendChunkv1(this, chunkIdx, chunkNum, chunk);
-      case 2:
-        return signSendChunkv2(this, chunkIdx, chunkNum, chunk);
+        return signSendChunk(this, chunkIdx, chunkNum, chunk);
       default:
         return {
           return_code: 0x6400,
