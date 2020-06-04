@@ -76,6 +76,7 @@ export default class TerraApp {
 
     switch (this.versionResponse.major) {
       case 1:
+      case 2: // for compatibility with cosmos app
         return serializePath(path);
       default:
         return {
@@ -216,6 +217,7 @@ export default class TerraApp {
 
       switch (this.versionResponse.major) {
         case 1:
+        case 2: // for compatibility with cosmos app
           const data = Buffer.concat([TerraApp.serializeHRP("terra"), serializedPath]);
           return publicKey(this, data);
         default:
@@ -290,6 +292,7 @@ export default class TerraApp {
   async signSendChunk(chunkIdx, chunkNum, chunk) {
     switch (this.versionResponse.major) {
       case 1:
+      case 2: // for compatibility with cosmos app
         return signSendChunk(this, chunkIdx, chunkNum, chunk);
       default:
         return {
