@@ -26,11 +26,14 @@ import {
   INS,
   errorCodeToString,
   getVersion,
+  getAppInfo,
   processErrorResponse,
   ERROR_CODE,
   P1_VALUES,
 } from "./common";
 
+const APP_NAME_TERRA = "Terra";
+const APP_NAME_COSMOS = "Cosmos";
 export default class TerraApp {
   constructor(transport, scrambleKey = APP_KEY) {
     if (!transport) {
@@ -68,22 +71,27 @@ export default class TerraApp {
   }
 
   async serializePath(path) {
-    this.versionResponse = await getVersion(this.transport);
-
-    if (this.versionResponse.return_code !== ERROR_CODE.NoError) {
-      throw this.versionResponse;
+    this.appInfoResponse = await getAppInfo(this.transport);
+    if (this.appInfoResponse.return_code !== ERROR_CODE.NoError) {
+      throw this.appInfoResponse;
     }
 
-    switch (this.versionResponse.major) {
-      case 1:
-      case 2: // for compatibility with cosmos app
-        return serializePath(path);
-      default:
-        return {
-          return_code: 0x6400,
-          error_message: "App Version is not supported",
-        };
+    const verisonSplit = this.appInfoResponse.appVersion.split('.');
+
+    this.versionResponse = {};
+    this.versionResponse.major = Number(verisonSplit[0]);
+    this.versionResponse.minor = Number(verisonSplit[1]);
+    this.versionResponse.patch = Number(verisonSplit[2]);
+
+    if ((this.appInfoResponse.appName === APP_NAME_TERRA && this.versionResponse.major === 1)
+      || (this.appInfoResponse.appName === APP_NAME_COSMOS && this.versionResponse.major === 2)) {
+      return serializePath(path);
     }
+
+    return {
+      return_code: 0x6400,
+      error_message: "App Version is not supported",
+    };
   }
 
   async signGetChunks(path, message) {
@@ -114,53 +122,12 @@ export default class TerraApp {
   }
 
   async appInfo() {
-    return this.transport.send(0xb0, 0x01, 0, 0).then(response => {
-      const errorCodeData = response.slice(-2);
-      const returnCode = errorCodeData[0] * 256 + errorCodeData[1];
-
-      const result = {};
-
-      let appName = "err";
-      let appVersion = "err";
-      let flagLen = 0;
-      let flagsValue = 0;
-
-      if (response[0] !== 1) {
-        // Ledger responds with format ID 1. There is no spec for any format != 1
-        result.error_message = "response format ID not recognized";
-        result.return_code = 0x9001;
-      } else {
-        const appNameLen = response[1];
-        appName = response.slice(2, 2 + appNameLen).toString("ascii");
-        let idx = 2 + appNameLen;
-        const appVersionLen = response[idx];
-        idx += 1;
-        appVersion = response.slice(idx, idx + appVersionLen).toString("ascii");
-        idx += appVersionLen;
-        const appFlagsLen = response[idx];
-        idx += 1;
-        flagLen = appFlagsLen;
-        flagsValue = response[idx];
-      }
-
-      return {
-        return_code: returnCode,
-        error_message: errorCodeToString(returnCode),
-        // //
-        appName,
-        appVersion,
-        flagLen,
-        flagsValue,
-        // eslint-disable-next-line no-bitwise
-        flag_recovery: (flagsValue & 1) !== 0,
-        // eslint-disable-next-line no-bitwise
-        flag_signed_mcu_code: (flagsValue & 2) !== 0,
-        // eslint-disable-next-line no-bitwise
-        flag_onboarded: (flagsValue & 4) !== 0,
-        // eslint-disable-next-line no-bitwise
-        flag_pin_validated: (flagsValue & 128) !== 0,
-      };
-    }, processErrorResponse);
+    try {
+      this.appInfoResponse = await getAppInfo(this.transport);
+      return this.appInfoResponse;
+    } catch (e) {
+      return processErrorResponse(e);
+    }
   }
 
   async deviceInfo() {
@@ -215,17 +182,16 @@ export default class TerraApp {
     try {
       const serializedPath = await this.serializePath(path);
 
-      switch (this.versionResponse.major) {
-        case 1:
-        case 2: // for compatibility with cosmos app
-          const data = Buffer.concat([TerraApp.serializeHRP("terra"), serializedPath]);
-          return publicKey(this, data);
-        default:
-          return {
-            return_code: 0x6400,
-            error_message: "App Version is not supported",
-          };
+      if ((this.appInfoResponse.appName === APP_NAME_TERRA && this.versionResponse.major === 1)
+        || (this.appInfoResponse.appName === APP_NAME_COSMOS && this.versionResponse.major === 2)) {
+        const data = Buffer.concat([TerraApp.serializeHRP("terra"), serializedPath]);
+        return publicKey(this, data);
       }
+
+      return {
+        return_code: 0x6400,
+        error_message: "App Version is not supported",
+      };
     } catch (e) {
       return processErrorResponse(e);
     }
@@ -290,16 +256,15 @@ export default class TerraApp {
   }
 
   async signSendChunk(chunkIdx, chunkNum, chunk) {
-    switch (this.versionResponse.major) {
-      case 1:
-      case 2: // for compatibility with cosmos app
-        return signSendChunk(this, chunkIdx, chunkNum, chunk);
-      default:
-        return {
-          return_code: 0x6400,
-          error_message: "App Version is not supported",
-        };
+    if ((this.appInfoResponse.appName === APP_NAME_TERRA && this.versionResponse.major === 1)
+      || (this.appInfoResponse.appName === APP_NAME_COSMOS && this.versionResponse.major === 2)) {
+      return signSendChunk(this, chunkIdx, chunkNum, chunk);
     }
+
+    return {
+      return_code: 0x6400,
+      error_message: "App Version is not supported",
+    };
   }
 
   async sign(path, message) {

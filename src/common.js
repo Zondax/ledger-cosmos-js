@@ -112,3 +112,53 @@ export async function getVersion(transport) {
     };
   }, processErrorResponse);
 }
+
+export async function getAppInfo(transport) {
+  return transport.send(0xb0, 0x01, 0, 0).then(response => {
+    const errorCodeData = response.slice(-2);
+    const returnCode = errorCodeData[0] * 256 + errorCodeData[1];
+
+    const result = {};
+
+    let appName = "err";
+    let appVersion = "err";
+    let flagLen = 0;
+    let flagsValue = 0;
+
+    if (response[0] !== 1) {
+      // Ledger responds with format ID 1. There is no spec for any format != 1
+      result.error_message = "response format ID not recognized";
+      result.return_code = 0x9001;
+    } else {
+      const appNameLen = response[1];
+      appName = response.slice(2, 2 + appNameLen).toString("ascii");
+      let idx = 2 + appNameLen;
+      const appVersionLen = response[idx];
+      idx += 1;
+      appVersion = response.slice(idx, idx + appVersionLen).toString("ascii");
+      idx += appVersionLen;
+      const appFlagsLen = response[idx];
+      idx += 1;
+      flagLen = appFlagsLen;
+      flagsValue = response[idx];
+    }
+
+    return {
+      return_code: returnCode,
+      error_message: errorCodeToString(returnCode),
+      // //
+      appName,
+      appVersion,
+      flagLen,
+      flagsValue,
+      // eslint-disable-next-line no-bitwise
+      flag_recovery: (flagsValue & 1) !== 0,
+      // eslint-disable-next-line no-bitwise
+      flag_signed_mcu_code: (flagsValue & 2) !== 0,
+      // eslint-disable-next-line no-bitwise
+      flag_onboarded: (flagsValue & 4) !== 0,
+      // eslint-disable-next-line no-bitwise
+      flag_pin_validated: (flagsValue & 128) !== 0,
+    };
+  }, processErrorResponse);
+}
