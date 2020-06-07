@@ -35,17 +35,12 @@ import {
 const APP_NAME_TERRA = "Terra";
 const APP_NAME_COSMOS = "Cosmos";
 export default class TerraApp {
-  constructor(transport, scrambleKey = APP_KEY) {
+  constructor(transport) {
     if (!transport) {
       throw new Error("Transport has not been defined");
     }
 
     this.transport = transport;
-    transport.decorateAppAPIMethods(
-      this,
-      ["getVersion", "sign", "getAddressAndPubKey", "appInfo", "deviceInfo", "getBech32FromPK"],
-      scrambleKey,
-    );
   }
 
   static serializeHRP(hrp) {
@@ -70,21 +65,39 @@ export default class TerraApp {
     return bech32.encode(hrp, bech32.toWords(hashRip));
   }
 
+  async initialize(scrambleKey = APP_KEY) {
+    // Decroratet methods
+    await Promise.all(
+      ["getVersion", "sign", "getAddressAndPubKey", "appInfo", "deviceInfo", "getBech32FromPK"].map(
+        async methodName => {
+          this[methodName] = await this.transport.decorateAppAPIMethod(
+            methodName,
+            this[methodName],
+            this,
+            scrambleKey,
+          );
+        },
+      ),
+    );
+  }
+
   async serializePath(path) {
     this.appInfoResponse = await getAppInfo(this.transport);
     if (this.appInfoResponse.return_code !== ERROR_CODE.NoError) {
       throw this.appInfoResponse;
     }
 
-    const verisonSplit = this.appInfoResponse.appVersion.split('.');
+    const verisonSplit = this.appInfoResponse.appVersion.split(".");
 
     this.versionResponse = {};
     this.versionResponse.major = Number(verisonSplit[0]);
     this.versionResponse.minor = Number(verisonSplit[1]);
     this.versionResponse.patch = Number(verisonSplit[2]);
 
-    if ((this.appInfoResponse.appName === APP_NAME_TERRA && this.versionResponse.major === 1)
-      || (this.appInfoResponse.appName === APP_NAME_COSMOS && this.versionResponse.major === 2)) {
+    if (
+      (this.appInfoResponse.appName === APP_NAME_TERRA && this.versionResponse.major === 1) ||
+      (this.appInfoResponse.appName === APP_NAME_COSMOS && this.versionResponse.major === 2)
+    ) {
       return serializePath(path);
     }
 
@@ -182,8 +195,10 @@ export default class TerraApp {
     try {
       const serializedPath = await this.serializePath(path);
 
-      if ((this.appInfoResponse.appName === APP_NAME_TERRA && this.versionResponse.major === 1)
-        || (this.appInfoResponse.appName === APP_NAME_COSMOS && this.versionResponse.major === 2)) {
+      if (
+        (this.appInfoResponse.appName === APP_NAME_TERRA && this.versionResponse.major === 1) ||
+        (this.appInfoResponse.appName === APP_NAME_COSMOS && this.versionResponse.major === 2)
+      ) {
         const data = Buffer.concat([TerraApp.serializeHRP("terra"), serializedPath]);
         return publicKey(this, data);
       }
@@ -256,8 +271,10 @@ export default class TerraApp {
   }
 
   async signSendChunk(chunkIdx, chunkNum, chunk) {
-    if ((this.appInfoResponse.appName === APP_NAME_TERRA && this.versionResponse.major === 1)
-      || (this.appInfoResponse.appName === APP_NAME_COSMOS && this.versionResponse.major === 2)) {
+    if (
+      (this.appInfoResponse.appName === APP_NAME_TERRA && this.versionResponse.major === 1) ||
+      (this.appInfoResponse.appName === APP_NAME_COSMOS && this.versionResponse.major === 2)
+    ) {
       return signSendChunk(this, chunkIdx, chunkNum, chunk);
     }
 
