@@ -2,12 +2,8 @@
 // https://jestjs.io/docs/en/configuration.html
 
 module.exports = {
+  preset: "ts-jest",
   modulePaths: ["<rootDir>/src", "<rootDir>/tests"],
-
-  moduleNameMapper: {
-    "^jest$": "<rootDir>/tests/jest.js",
-    "^index.js$": "<rootDir>/src/index.js",
-  },
 
   // Automatically clear mock calls and instances between every test
   clearMocks: true,
