@@ -50,7 +50,10 @@ const ERROR_DESCRIPTION = {
 };
 
 export function errorCodeToString(statusCode) {
-  if (statusCode in ERROR_DESCRIPTION) return ERROR_DESCRIPTION[statusCode];
+  if (statusCode in ERROR_DESCRIPTION) {
+    return ERROR_DESCRIPTION[statusCode];
+  }
+
   return `Unknown Status Code: ${statusCode}`;
 }
 
@@ -88,7 +91,7 @@ export function processErrorResponse(response) {
 }
 
 export async function getVersion(transport) {
-  return transport.send(CLA, INS.GET_VERSION, 0, 0).then(response => {
+  return transport.send(CLA, INS.GET_VERSION, 0, 0).then((response) => {
     const errorCodeData = response.slice(-2);
     const returnCode = errorCodeData[0] * 256 + errorCodeData[1];
 
@@ -114,7 +117,7 @@ export async function getVersion(transport) {
 }
 
 export async function getAppInfo(transport) {
-  return transport.send(0xb0, 0x01, 0, 0).then(response => {
+  return transport.send(0xb0, 0x01, 0, 0).then((response) => {
     const errorCodeData = response.slice(-2);
     const returnCode = errorCodeData[0] * 256 + errorCodeData[1];
 

@@ -57,19 +57,16 @@ export default class TerraApp {
     if (pk.length !== 33) {
       throw new Error("expected compressed public key [31 bytes]");
     }
-    const hashSha256 = crypto
-      .createHash("sha256")
-      .update(pk)
-      .digest();
+    const hashSha256 = crypto.createHash("sha256").update(pk).digest();
     const hashRip = new Ripemd160().update(hashSha256).digest();
     return bech32.encode(hrp, bech32.toWords(hashRip));
   }
 
   async initialize(scrambleKey = APP_KEY) {
-    // Decroratet methods
+    // Decorate methods
     await Promise.all(
       ["getVersion", "sign", "getAddressAndPubKey", "appInfo", "deviceInfo", "getBech32FromPK"].map(
-        async methodName => {
+        async (methodName) => {
           this[methodName] = await this.transport.decorateAppAPIMethod(
             methodName,
             this[methodName],
@@ -146,7 +143,7 @@ export default class TerraApp {
   async deviceInfo() {
     return this.transport
       .send(0xe0, 0x01, 0, 0, Buffer.from([]), [ERROR_CODE.NoError, 0x6e00])
-      .then(response => {
+      .then((response) => {
         const errorCodeData = response.slice(-2);
         const returnCode = errorCodeData[0] * 256 + errorCodeData[1];
 
@@ -215,11 +212,11 @@ export default class TerraApp {
   async getAddressAndPubKey(path, hrp) {
     try {
       return this.serializePath(path)
-        .then(serializedPath => {
+        .then((serializedPath) => {
           const data = Buffer.concat([TerraApp.serializeHRP(hrp), serializedPath]);
           return this.transport
             .send(CLA, INS.GET_ADDR_SECP256K1, P1_VALUES.ONLY_RETRIEVE, 0, data, [ERROR_CODE.NoError])
-            .then(response => {
+            .then((response) => {
               const errorCodeData = response.slice(-2);
               const returnCode = errorCodeData[0] * 256 + errorCodeData[1];
 
@@ -228,13 +225,13 @@ export default class TerraApp {
 
               return {
                 bech32_address: bech32Address,
-                compressed_pk: compressedPk,
+                compressed_pk: compressedPk.toJSON(),
                 return_code: returnCode,
                 error_message: errorCodeToString(returnCode),
               };
             }, processErrorResponse);
         })
-        .catch(err => processErrorResponse(err));
+        .catch((err) => processErrorResponse(err));
     } catch (e) {
       return processErrorResponse(e);
     }
@@ -243,13 +240,13 @@ export default class TerraApp {
   async showAddressAndPubKey(path, hrp) {
     try {
       return this.serializePath(path)
-        .then(serializedPath => {
+        .then((serializedPath) => {
           const data = Buffer.concat([TerraApp.serializeHRP(hrp), serializedPath]);
           return this.transport
             .send(CLA, INS.GET_ADDR_SECP256K1, P1_VALUES.SHOW_ADDRESS_IN_DEVICE, 0, data, [
               ERROR_CODE.NoError,
             ])
-            .then(response => {
+            .then((response) => {
               const errorCodeData = response.slice(-2);
               const returnCode = errorCodeData[0] * 256 + errorCodeData[1];
 
@@ -258,13 +255,13 @@ export default class TerraApp {
 
               return {
                 bech32_address: bech32Address,
-                compressed_pk: compressedPk,
+                compressed_pk: compressedPk.toJSON(),
                 return_code: returnCode,
                 error_message: errorCodeToString(returnCode),
               };
             }, processErrorResponse);
         })
-        .catch(err => processErrorResponse(err));
+        .catch((err) => processErrorResponse(err));
     } catch (e) {
       return processErrorResponse(e);
     }
@@ -285,8 +282,8 @@ export default class TerraApp {
   }
 
   async sign(path, message) {
-    return this.signGetChunks(path, message).then(chunks => {
-      return this.signSendChunk(1, chunks.length, chunks[0], [ERROR_CODE.NoError]).then(async response => {
+    return this.signGetChunks(path, message).then((chunks) => {
+      return this.signSendChunk(1, chunks.length, chunks[0], [ERROR_CODE.NoError]).then(async (response) => {
         let result = {
           return_code: response.return_code,
           error_message: response.error_message,
@@ -305,7 +302,7 @@ export default class TerraApp {
           return_code: result.return_code,
           error_message: result.error_message,
           // ///
-          signature: result.signature,
+          signature: result.signature && result.signature.toJSON(),
         };
       }, processErrorResponse);
     }, processErrorResponse);
