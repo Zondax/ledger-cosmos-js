@@ -6,6 +6,7 @@ export interface JSONBuffer {
 export interface CommonResponse {
   return_code: number;
   error_message: string;
+  device_locked?: boolean;
 }
 
 export interface PublicKeyResponse extends CommonResponse {
@@ -19,7 +20,7 @@ export interface AddressResponse extends CommonResponse {
 }
 
 export interface SignResponse extends CommonResponse {
-  signature: null | JSONBuffer;
+  signature: JSONBuffer;
 }
 
 export interface AppInfoResponse extends CommonResponse {
@@ -38,7 +39,6 @@ export interface VersionResponse extends CommonResponse {
   major: number;
   minor: number;
   patch: number;
-  device_locked: boolean;
   target_id: string;
 }
 
@@ -112,7 +112,7 @@ function isDict(v): boolean {
   return typeof v === "object" && v !== null && !(v instanceof Array) && !(v instanceof Date);
 }
 
-export function processErrorResponse(response: any): CommonResponse {
+export function processErrorResponse(response: any) {
   if (response) {
     if (isDict(response)) {
       if (Object.prototype.hasOwnProperty.call(response, "statusCode")) {

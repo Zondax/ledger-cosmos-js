@@ -31,140 +31,152 @@ export function serializePath(path) {
 }
 
 export function getVersion(transport): Promise<VersionResponse> {
-  return transport.send(CLA, INS.GET_VERSION, 0, 0).then((response) => {
-    const errorCodeData = response.slice(-2);
-    const returnCode = errorCodeData[0] * 256 + errorCodeData[1];
+  return transport
+    .send(CLA, INS.GET_VERSION, 0, 0)
+    .then((response) => {
+      const errorCodeData = response.slice(-2);
+      const returnCode = errorCodeData[0] * 256 + errorCodeData[1];
 
-    let targetId = 0;
-    if (response.length >= 9) {
-      /* eslint-disable no-bitwise */
-      targetId = (response[5] << 24) + (response[6] << 16) + (response[7] << 8) + (response[8] << 0);
-      /* eslint-enable no-bitwise */
-    }
+      let targetId = 0;
+      if (response.length >= 9) {
+        /* eslint-disable no-bitwise */
+        targetId = (response[5] << 24) + (response[6] << 16) + (response[7] << 8) + (response[8] << 0);
+        /* eslint-enable no-bitwise */
+      }
 
-    return {
-      return_code: returnCode,
-      error_message: errorCodeToString(returnCode),
-      // ///
-      test_mode: response[0] !== 0,
-      major: response[1],
-      minor: response[2],
-      patch: response[3],
-      device_locked: response[4] === 1,
-      target_id: targetId.toString(16),
-    };
-  });
+      return {
+        return_code: returnCode,
+        error_message: errorCodeToString(returnCode),
+        // ///
+        test_mode: response[0] !== 0,
+        major: response[1],
+        minor: response[2],
+        patch: response[3],
+        device_locked: response[4] === 1,
+        target_id: targetId.toString(16),
+      };
+    })
+    .catch(processErrorResponse);
 }
 
 export function getAppInfo(transport): Promise<AppInfoResponse> {
-  return transport.send(0xb0, 0x01, 0, 0).then((response) => {
-    const errorCodeData = response.slice(-2);
-    let return_code: number = errorCodeData[0] * 256 + errorCodeData[1];
-    let error_message: string;
+  return transport
+    .send(0xb0, 0x01, 0, 0)
+    .then((response) => {
+      const errorCodeData = response.slice(-2);
+      let return_code: number = errorCodeData[0] * 256 + errorCodeData[1];
+      let error_message: string;
 
-    let app_name = "err";
-    let app_version = "err";
-    let flag_len = 0;
-    let flags_value = 0;
+      let app_name = "err";
+      let app_version = "err";
+      let flag_len = 0;
+      let flags_value = 0;
 
-    if (response[0] !== 1) {
-      // Ledger responds with format ID 1. There is no spec for any format != 1
-      error_message = "response format ID not recognized";
-      return_code = 0x9001;
-    } else {
-      error_message = "No errors";
-      const appNameLen = response[1];
-      app_name = response.slice(2, 2 + appNameLen).toString("ascii");
-      let idx = 2 + appNameLen;
-      const appVersionLen = response[idx];
-      idx += 1;
-      app_version = response.slice(idx, idx + appVersionLen).toString("ascii");
-      idx += appVersionLen;
-      const appFlagsLen = response[idx];
-      idx += 1;
-      flag_len = appFlagsLen;
-      flags_value = response[idx];
-    }
+      if (response[0] !== 1) {
+        // Ledger responds with format ID 1. There is no spec for any format != 1
+        error_message = "response format ID not recognized";
+        return_code = 0x9001;
+      } else {
+        error_message = "No errors";
+        const appNameLen = response[1];
+        app_name = response.slice(2, 2 + appNameLen).toString("ascii");
+        let idx = 2 + appNameLen;
+        const appVersionLen = response[idx];
+        idx += 1;
+        app_version = response.slice(idx, idx + appVersionLen).toString("ascii");
+        idx += appVersionLen;
+        const appFlagsLen = response[idx];
+        idx += 1;
+        flag_len = appFlagsLen;
+        flags_value = response[idx];
+      }
 
-    return {
-      return_code,
-      error_message,
-      // //
-      app_name,
-      app_version,
-      flag_len,
-      flags_value,
-      // eslint-disable-next-line no-bitwise
-      flag_recovery: (flags_value & 1) !== 0,
-      // eslint-disable-next-line no-bitwise
-      flag_signed_mcu_code: (flags_value & 2) !== 0,
-      // eslint-disable-next-line no-bitwise
-      flag_onboarded: (flags_value & 4) !== 0,
-      // eslint-disable-next-line no-bitwise
-      flag_pin_validated: (flags_value & 128) !== 0,
-    };
-  });
+      return {
+        return_code,
+        error_message,
+        // //
+        app_name,
+        app_version,
+        flag_len,
+        flags_value,
+        // eslint-disable-next-line no-bitwise
+        flag_recovery: (flags_value & 1) !== 0,
+        // eslint-disable-next-line no-bitwise
+        flag_signed_mcu_code: (flags_value & 2) !== 0,
+        // eslint-disable-next-line no-bitwise
+        flag_onboarded: (flags_value & 4) !== 0,
+        // eslint-disable-next-line no-bitwise
+        flag_pin_validated: (flags_value & 128) !== 0,
+      };
+    })
+    .catch(processErrorResponse);
 }
 
-export async function getDeviceInfo(transport): Promise<CommonResponse | DeviceInfoResponse> {
-  return transport.send(0xe0, 0x01, 0, 0, Buffer.from([]), [ERROR_CODE.NoError, 0x6e00]).then((response) => {
-    const errorCodeData = response.slice(-2);
-    const returnCode = errorCodeData[0] * 256 + errorCodeData[1];
+export async function getDeviceInfo(transport): Promise<DeviceInfoResponse> {
+  return transport
+    .send(0xe0, 0x01, 0, 0, Buffer.from([]), [ERROR_CODE.NoError, 0x6e00])
+    .then((response) => {
+      const errorCodeData = response.slice(-2);
+      const returnCode = errorCodeData[0] * 256 + errorCodeData[1];
 
-    if (returnCode === 0x6e00) {
+      if (returnCode === 0x6e00) {
+        return {
+          return_code: returnCode,
+          error_message: "This command is only available in the Dashboard",
+        };
+      }
+
+      const targetId = response.slice(0, 4).toString("hex");
+
+      let pos = 4;
+      const secureElementVersionLen = response[pos];
+      pos += 1;
+      const seVersion = response.slice(pos, pos + secureElementVersionLen).toString();
+      pos += secureElementVersionLen;
+
+      const flagsLen = response[pos];
+      pos += 1;
+      const flag = response.slice(pos, pos + flagsLen).toString("hex");
+      pos += flagsLen;
+
+      const mcuVersionLen = response[pos];
+      pos += 1;
+      // Patch issue in mcu version
+      let tmp = response.slice(pos, pos + mcuVersionLen);
+      if (tmp[mcuVersionLen - 1] === 0) {
+        tmp = response.slice(pos, pos + mcuVersionLen - 1);
+      }
+      const mcuVersion = tmp.toString();
+
       return {
         return_code: returnCode,
-        error_message: "This command is only available in the Dashboard",
+        error_message: errorCodeToString(returnCode),
+        // //
+        targetId,
+        seVersion,
+        flag,
+        mcuVersion,
       };
-    }
-
-    const targetId = response.slice(0, 4).toString("hex");
-
-    let pos = 4;
-    const secureElementVersionLen = response[pos];
-    pos += 1;
-    const seVersion = response.slice(pos, pos + secureElementVersionLen).toString();
-    pos += secureElementVersionLen;
-
-    const flagsLen = response[pos];
-    pos += 1;
-    const flag = response.slice(pos, pos + flagsLen).toString("hex");
-    pos += flagsLen;
-
-    const mcuVersionLen = response[pos];
-    pos += 1;
-    // Patch issue in mcu version
-    let tmp = response.slice(pos, pos + mcuVersionLen);
-    if (tmp[mcuVersionLen - 1] === 0) {
-      tmp = response.slice(pos, pos + mcuVersionLen - 1);
-    }
-    const mcuVersion = tmp.toString();
-
-    return {
-      return_code: returnCode,
-      error_message: errorCodeToString(returnCode),
-      // //
-      targetId,
-      seVersion,
-      flag,
-      mcuVersion,
-    };
-  });
+    })
+    .catch(processErrorResponse);
 }
 
 export function publicKey(transport, data): Promise<PublicKeyResponse> {
-  return transport.send(CLA, INS.GET_ADDR_SECP256K1, 0, 0, data, [ERROR_CODE.NoError]).then((response) => {
-    const errorCodeData = response.slice(-2);
-    const returnCode: number = errorCodeData[0] * 256 + errorCodeData[1];
-    const compressedPk = response ? Buffer.from(response.slice(0, 33)) : null;
+  return transport
+    .send(CLA, INS.GET_ADDR_SECP256K1, 0, 0, data, [ERROR_CODE.NoError])
+    .then((response) => {
+      const errorCodeData = response.slice(-2);
+      const returnCode: number = errorCodeData[0] * 256 + errorCodeData[1];
+      const compressedPk = response ? Buffer.from(response.slice(0, 33)) : null;
 
-    return {
-      pk: "OBSOLETE PROPERTY",
-      compressed_pk: compressedPk ? compressedPk.toJSON() : compressedPk,
-      return_code: returnCode,
-      error_message: errorCodeToString(returnCode),
-    };
-  });
+      return {
+        pk: "OBSOLETE PROPERTY",
+        compressed_pk: compressedPk ? compressedPk.toJSON() : compressedPk,
+        return_code: returnCode,
+        error_message: errorCodeToString(returnCode),
+      };
+    })
+    .catch(processErrorResponse);
 }
 
 export function getAddressAndPubKey(transport, data): Promise<PublicKeyResponse> {
@@ -183,7 +195,8 @@ export function getAddressAndPubKey(transport, data): Promise<PublicKeyResponse>
         return_code: returnCode,
         error_message: errorCodeToString(returnCode),
       };
-    });
+    })
+    .catch(processErrorResponse);
 }
 
 export function showAddressAndPubKey(transport, data): Promise<PublicKeyResponse> {
@@ -202,7 +215,8 @@ export function showAddressAndPubKey(transport, data): Promise<PublicKeyResponse
         return_code: returnCode,
         error_message: errorCodeToString(returnCode),
       };
-    });
+    })
+    .catch(processErrorResponse);
 }
 
 function signGetChunks(path, message) {
@@ -225,12 +239,7 @@ function signGetChunks(path, message) {
   return chunks;
 }
 
-function signSendChunk(
-  transport,
-  chunkIdx: number,
-  chunkNum: number,
-  chunk: Buffer,
-): Promise<SignResponse> {
+function signSendChunk(transport, chunkIdx: number, chunkNum: number, chunk: Buffer): Promise<SignResponse> {
   let payloadType = PAYLOAD_TYPE.ADD;
 
   if (chunkIdx === 1) {
@@ -252,17 +261,19 @@ function signSendChunk(
         errorMessage = `${errorMessage} : ${response.slice(0, response.length - 2).toString("ascii")}`;
       }
 
-      let signature: Buffer | null = null;
+      let signature: Buffer = Buffer.from([]);
+
       if (response.length > 2) {
         signature = response.slice(0, response.length - 2);
       }
 
       return {
-        signature: signature ? signature.toJSON() : signature,
+        signature: signature.toJSON(),
         return_code: returnCode,
         error_message: errorMessage,
       };
-    }, processErrorResponse);
+    })
+    .catch(processErrorResponse);
 }
 
 export function sign(transport, path, message): Promise<SignResponse> {
@@ -273,7 +284,7 @@ export function sign(transport, path, message): Promise<SignResponse> {
       let result: SignResponse = {
         return_code: response.return_code,
         error_message: response.error_message,
-        signature: null,
+        signature: { type: 'Buffer', data: [] }
       };
 
       for (let i = 1; i < chunks.length; i += 1) {
@@ -290,4 +301,5 @@ export function sign(transport, path, message): Promise<SignResponse> {
         signature: result.signature,
       };
     })
+    .catch(processErrorResponse);
 }

@@ -32,8 +32,9 @@ import {
   CommonResponse,
   AppInfoResponse,
   VersionResponse,
-  processErrorResponse,
-  APP_KEY,
+  PublicKeyResponse,
+  DeviceInfoResponse,
+  SignResponse,
 } from "./common";
 
 const APP_NAME_TERRA = "Terra";
@@ -41,8 +42,8 @@ const APP_NAME_COSMOS = "Cosmos";
 
 export default class TerraApp {
   private transport;
-  private appInfo: AppInfoResponse;
-  version: VersionResponse;
+  private info: AppInfoResponse;
+  private version: VersionResponse;
 
   constructor(transport) {
     if (!transport) {
@@ -71,35 +72,12 @@ export default class TerraApp {
     return bech32.encode(hrp, bech32.toWords(hashRip));
   }
 
-  async initialize(scrambleKey = APP_KEY): Promise<void | CommonResponse> {
-    // Decorate methods
-    const methods = ["getVersion", "sign", "getAddressAndPubKey", "appInfo", "deviceInfo", "getBech32FromPK"];
-
-    for (let methodName of methods) {
-      this[methodName] = await this.transport.decorateAppAPIMethod(
-        methodName,
-        this[methodName],
-        this,
-        scrambleKey,
-      );
-    }
-
-    return getAppInfo(this.transport)
-      .then((appInfo) => {
-        this.appInfo = appInfo;
-        return getVersion(this.transport);
-      })
-      .then((version) => {
-        this.version = version;
-      });
-  }
-
-  validateCompatibility(): CommonResponse | null {
+  private validateCompatibility(): CommonResponse | null {
     if (
-      this.appInfo &&
+      this.info &&
       this.version &&
-      ((this.appInfo.app_name === APP_NAME_TERRA && this.version.major === 1) ||
-        (this.appInfo.app_name === APP_NAME_COSMOS && this.version.major === 2))
+      ((this.info.app_name === APP_NAME_TERRA && this.version.major === 1) ||
+        (this.info.app_name === APP_NAME_COSMOS && this.version.major === 2))
     ) {
       return null;
     }
@@ -110,58 +88,52 @@ export default class TerraApp {
     };
   }
 
-  serializePath(path): CommonResponse | Buffer {
-    return this.validateCompatibility() || serializePath(path);
+  /**
+   * @returns CommonResponse | null returns CommonResponse if app is not compatible
+   */
+  async initialize(): Promise<CommonResponse | null> {
+    return getAppInfo(this.transport)
+      .then((appInfo) => {
+        this.info = appInfo;
+        return getVersion(this.transport);
+      })
+      .then((version) => {
+        this.version = version;
+        return this.validateCompatibility();
+      });
   }
 
-  getVersion() {
+  getInfo(): AppInfoResponse {
+    return this.info;
+  }
+
+  getVersion(): VersionResponse {
     return this.version;
   }
 
-  getDeviceInfo() {
-    return getDeviceInfo(this.transport).catch(processErrorResponse);
+  getDeviceInfo(): Promise<DeviceInfoResponse> {
+    return getDeviceInfo(this.transport);
   }
 
-  getPublicKey(path) {
-    const result = this.serializePath(path);
-
-    if (!(result instanceof Buffer)) {
-      return result;
-    }
-
+  getPublicKey(path): Promise<PublicKeyResponse> {
+    const result = serializePath(path);
     const data = Buffer.concat([TerraApp.serializeHRP("terra"), result]);
-    return publicKey(this.transport, data).catch(processErrorResponse);
+    return publicKey(this.transport, data);
   }
 
-  getAddressAndPubKey(path, hrp) {
-    const result = this.serializePath(path);
-
-    if (!(result instanceof Buffer)) {
-      return result;
-    }
-
+  getAddressAndPubKey(path, hrp): Promise<PublicKeyResponse> {
+    const result = serializePath(path);
     const data = Buffer.concat([TerraApp.serializeHRP(hrp), result]);
-    return getAddressAndPubKey(this.transport, data).catch(processErrorResponse);
+    return getAddressAndPubKey(this.transport, data);
   }
 
-  showAddressAndPubKey(path, hrp) {
-    const result = this.serializePath(path);
-
-    if (!(result instanceof Buffer)) {
-      return result;
-    }
-
+  showAddressAndPubKey(path, hrp): Promise<PublicKeyResponse> {
+    const result = serializePath(path);
     const data = Buffer.concat([TerraApp.serializeHRP(hrp), result]);
-    return showAddressAndPubKey(this.transport, data).catch(processErrorResponse);
+    return showAddressAndPubKey(this.transport, data);
   }
 
-  sign(path, message) {
-    const result = this.validateCompatibility();
-
-    if (result) {
-      return result;
-    }
-
-    return sign(this.transport, path, message).catch(processErrorResponse);
+  sign(path, message): Promise<SignResponse> {
+    return sign(this.transport, path, message);
   }
 }
