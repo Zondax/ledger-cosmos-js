@@ -48,7 +48,7 @@ import TransportWebUSB from "@ledgerhq/hw-transport-webusb";
 // eslint-disable-next-line import/no-extraneous-dependencies
 import TransportU2F from "@ledgerhq/hw-transport-u2f";
 import TerraApp from "../../src";
-import { ERROR_CODE } from "../../src/common";
+import { ERROR_CODE } from "../../src/constants";
 
 const path = [44, 330, 0, 0, 0];
 
@@ -126,7 +126,7 @@ export default {
       await app.initialize();
 
       // now it is possible to access all commands in the app
-      const response = await app.appInfo();
+      const response = await app.getInfo();
       if (response.return_code !== 0x9000) {
         this.log(`Error [${response.return_code}] ${response.error_message}`);
         return;
@@ -149,7 +149,7 @@ export default {
       this.log(`Test mode: ${response.test_mode}`);
 
       // now it is possible to access all commands in the app
-      response = await app.publicKey(path);
+      response = await app.getPublicKey(path);
       if (response.return_code !== 0x9000) {
         this.log(`Error [${response.return_code}] ${response.error_message}`);
         return;
