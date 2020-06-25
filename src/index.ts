@@ -1,4 +1,4 @@
 import TerraApp from "./app";
-export * from './common';
+export * from './types';
 
 export default TerraApp;

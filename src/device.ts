@@ -1,19 +1,61 @@
 import {
-  CommonResponse,
-  VersionResponse,
-  AppInfoResponse,
-  DeviceInfoResponse,
-  SignResponse,
-  PublicKeyResponse,
   CLA,
   ERROR_CODE,
   P1_VALUES,
   INS,
   PAYLOAD_TYPE,
   CHUNK_SIZE,
-  errorCodeToString,
-  processErrorResponse,
-} from "./common";
+  ERROR_DESCRIPTION,
+} from "./constants";
+
+import {
+  AppInfoResponse,
+  VersionResponse,
+  DeviceInfoResponse,
+  PublicKeyResponse,
+  SignResponse
+} from './types'
+
+function errorCodeToString(statusCode): string {
+  if (statusCode in ERROR_DESCRIPTION) {
+    return ERROR_DESCRIPTION[statusCode];
+  }
+
+  return `Unknown Status Code: ${statusCode}`;
+}
+
+function isDict(v): boolean {
+  return typeof v === "object" && v !== null && !(v instanceof Array) && !(v instanceof Date);
+}
+
+function processErrorResponse(response: any) {
+  if (response) {
+    if (isDict(response)) {
+      if (Object.prototype.hasOwnProperty.call(response, "statusCode")) {
+        return {
+          return_code: response.statusCode,
+          error_message: errorCodeToString(response.statusCode),
+        };
+      }
+
+      if (
+        Object.prototype.hasOwnProperty.call(response, "return_code") &&
+        Object.prototype.hasOwnProperty.call(response, "error_message")
+      ) {
+        return response;
+      }
+    }
+    return {
+      return_code: 0xffff,
+      error_message: response.toString(),
+    };
+  }
+
+  return {
+    return_code: 0xffff,
+    error_message: response.toString(),
+  };
+}
 
 export function serializePath(path) {
   if (!path || path.length !== 5) {
@@ -35,7 +77,7 @@ export function getVersion(transport): Promise<VersionResponse> {
     .send(CLA, INS.GET_VERSION, 0, 0)
     .then((response) => {
       const errorCodeData = response.slice(-2);
-      const returnCode = errorCodeData[0] * 256 + errorCodeData[1];
+      const return_code = errorCodeData[0] * 256 + errorCodeData[1];
 
       let targetId = 0;
       if (response.length >= 9) {
@@ -45,8 +87,8 @@ export function getVersion(transport): Promise<VersionResponse> {
       }
 
       return {
-        return_code: returnCode,
-        error_message: errorCodeToString(returnCode),
+        return_code: return_code,
+        error_message: errorCodeToString(return_code),
         // ///
         test_mode: response[0] !== 0,
         major: response[1],
@@ -126,12 +168,12 @@ export async function getDeviceInfo(transport): Promise<DeviceInfoResponse> {
         };
       }
 
-      const targetId = response.slice(0, 4).toString("hex");
+      const target_id = response.slice(0, 4).toString("hex");
 
       let pos = 4;
       const secureElementVersionLen = response[pos];
       pos += 1;
-      const seVersion = response.slice(pos, pos + secureElementVersionLen).toString();
+      const se_version = response.slice(pos, pos + secureElementVersionLen).toString();
       pos += secureElementVersionLen;
 
       const flagsLen = response[pos];
@@ -146,16 +188,16 @@ export async function getDeviceInfo(transport): Promise<DeviceInfoResponse> {
       if (tmp[mcuVersionLen - 1] === 0) {
         tmp = response.slice(pos, pos + mcuVersionLen - 1);
       }
-      const mcuVersion = tmp.toString();
+      const mcu_version = tmp.toString();
 
       return {
         return_code: returnCode,
         error_message: errorCodeToString(returnCode),
         // //
-        targetId,
-        seVersion,
+        target_id,
+        se_version,
         flag,
-        mcuVersion,
+        mcu_version,
       };
     })
     .catch(processErrorResponse);
@@ -284,7 +326,7 @@ export function sign(transport, path, message): Promise<SignResponse> {
       let result: SignResponse = {
         return_code: response.return_code,
         error_message: response.error_message,
-        signature: { type: 'Buffer', data: [] }
+        signature: { type: "Buffer", data: [] },
       };
 
       for (let i = 1; i < chunks.length; i += 1) {

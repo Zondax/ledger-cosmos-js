@@ -27,7 +27,7 @@ import {
   getDeviceInfo,
   getAddressAndPubKey,
   showAddressAndPubKey,
-} from "./helper";
+} from "./device";
 import {
   CommonResponse,
   AppInfoResponse,
@@ -35,7 +35,7 @@ import {
   PublicKeyResponse,
   DeviceInfoResponse,
   SignResponse,
-} from "./common";
+} from "./types";
 
 const APP_NAME_TERRA = "Terra";
 const APP_NAME_COSMOS = "Cosmos";
@@ -73,13 +73,21 @@ export default class TerraApp {
   }
 
   private validateCompatibility(): CommonResponse | null {
-    if (
-      this.info &&
-      this.version &&
-      ((this.info.app_name === APP_NAME_TERRA && this.version.major === 1) ||
-        (this.info.app_name === APP_NAME_COSMOS && this.version.major === 2))
-    ) {
-      return null;
+    if (this.info && this.version) {
+      if (this.info.return_code !== 0x9000) {
+        return this.info;
+      }
+
+      if (this.version.return_code !== 0x9000) {
+        return this.version;
+      }
+
+      if (
+        (this.info.app_name === APP_NAME_TERRA && this.version.major === 1) ||
+        (this.info.app_name === APP_NAME_COSMOS && this.version.major === 2)
+      ) {
+        return null;
+      }
     }
 
     return {
