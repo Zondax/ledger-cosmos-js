@@ -1,16 +1,55 @@
-import TerraApp from "index.js";
+import * as crypto from "crypto";
+import * as secp256k1 from "secp256k1/elliptic";
 import TransportNodeHid from "@ledgerhq/hw-transport-node-hid";
-import { expect, test } from "jest";
-import secp256k1 from "secp256k1/elliptic";
-import crypto from "crypto";
-import { ERROR_CODE } from "../src/common";
+import TerraApp, { PublicKeyResponse, AddressResponse, SignResponse  } from "../src";
+import { ERROR_CODE} from "../src/constants";
+
+const debug = require("debug")("ledger-terra-js");
+
+const TERRA_ADDRESS = "terra1rpml0hh6kc8g6at2lsatzkd550yc2ngnsachtt";
+const TERRA_HEX_PUBLIC_KEY = "03028f0d5a9fd41600191cdefdea05e77a68dfbce286241c0190805b9346667d07";
+// const TERRA_ADDRESS = "terra1lnl5tm84drx69qtygrj40steyvyk5emngeclcc";
+// const TERRA_HEX_PUBLIC_KEY = "03ad97b6e920dda87454196c7899ed0bfd0a958b6f45a7235e6bde7359f04f0be1";
+
+async function testSign(path: number[], message: string) {
+  const responsePk = (await app.getPublicKey(path)) as PublicKeyResponse;
+  const responseSign = (await app.sign(path, message)) as SignResponse;
+
+  debug("testSign", { responsePk, responseSign });
+
+  expect(responsePk.return_code).toEqual(ERROR_CODE.NoError);
+  expect(responsePk.error_message).toEqual("No errors");
+  expect(responsePk.compressed_pk).not.toBeNull();
+  expect(responseSign.return_code).toEqual(ERROR_CODE.NoError);
+  expect(responseSign.error_message).toEqual("No errors");
+  expect(responseSign.signature).not.toBeNull();
+
+  if (responsePk.compressed_pk && responseSign.signature) {
+    // Check signature is valid
+    const hash = crypto.createHash("sha256");
+    const msgHash = hash.update(message).digest();
+
+    const signature = secp256k1.signatureImport(Buffer.from(responseSign.signature));
+    const signatureOk = secp256k1.verify(msgHash, signature, Buffer.from(responsePk.compressed_pk));
+    expect(signatureOk).toEqual(true);
+  }
+}
+
+jest.setTimeout(60000);
+
+let transport;
+let app: TerraApp;
+
+beforeAll(async (done) => {
+  transport = await TransportNodeHid.create(1000);
+  app = new TerraApp(transport);
+  await app.initialize();
+  done();
+});
 
 test("get version", async () => {
-  const transport = await TransportNodeHid.create(1000);
-
-  const app = new TerraApp(transport);
   const resp = await app.getVersion();
-  console.log(resp);
+  debug("get version", resp);
 
   expect(resp.return_code).toEqual(ERROR_CODE.NoError);
   expect(resp.error_message).toEqual("No errors");
@@ -22,34 +61,31 @@ test("get version", async () => {
 });
 
 test("publicKey", async () => {
-  const transport = await TransportNodeHid.create(1000);
-  const app = new TerraApp(transport);
-
   // Derivation path. First 3 items are automatically hardened!
   const path = [44, 330, 0, 0, 0];
 
-  const resp = await app.publicKey(path);
+  const resp = (await app.getPublicKey(path)) as PublicKeyResponse;
 
   expect(resp.return_code).toEqual(ERROR_CODE.NoError);
   expect(resp.error_message).toEqual("No errors");
   expect(resp).toHaveProperty("compressed_pk");
-  expect(resp.compressed_pk.length).toEqual(33);
-  expect(resp.compressed_pk.toString("hex")).toEqual(
-    "03028f0d5a9fd41600191cdefdea05e77a68dfbce286241c0190805b9346667d07",
-  );
+  expect(resp.compressed_pk).not.toBeNull();
+
+  if (resp.compressed_pk) {
+    const pkBuffer = Buffer.from(resp.compressed_pk);
+    expect(pkBuffer.length).toEqual(33);
+    expect(pkBuffer.toString("hex")).toEqual(TERRA_HEX_PUBLIC_KEY);
+  }
 });
 
 test("getAddressAndPubKey", async () => {
   jest.setTimeout(60000);
 
-  const transport = await TransportNodeHid.create(1000);
-  const app = new TerraApp(transport);
-
   // Derivation path. First 3 items are automatically hardened!
   const path = [44, 330, 5, 0, 3];
-  const resp = await app.getAddressAndPubKey(path, "terra");
+  const resp = (await app.getAddressAndPubKey(path, "terra")) as AddressResponse;
 
-  console.log(resp);
+  debug("getAddressAndPubKey", resp);
 
   expect(resp.return_code).toEqual(ERROR_CODE.NoError);
   expect(resp.error_message).toEqual("No errors");
@@ -57,21 +93,19 @@ test("getAddressAndPubKey", async () => {
   expect(resp).toHaveProperty("bech32_address");
   expect(resp).toHaveProperty("compressed_pk");
 
-  expect(resp.bech32_address).toEqual("terra1rpml0hh6kc8g6at2lsatzkd550yc2ngnsachtt");
-  expect(resp.compressed_pk.length).toEqual(33);
+  expect(resp.bech32_address).toEqual(TERRA_ADDRESS);
+  const pkBuffer = Buffer.from(resp.compressed_pk);
+  expect(pkBuffer.length).toEqual(33);
 });
 
-test("showAddressAndPubKey", async () => {
+test("show address and public key", async () => {
   jest.setTimeout(60000);
-
-  const transport = await TransportNodeHid.create(1000);
-  const app = new TerraApp(transport);
 
   // Derivation path. First 3 items are automatically hardened!
   const path = [44, 330, 5, 0, 3];
-  const resp = await app.showAddressAndPubKey(path, "terra");
+  const resp = (await app.showAddressAndPubKey(path, "terra")) as AddressResponse;
 
-  console.log(resp);
+  debug("showAddressAndPubKey", resp);
 
   expect(resp.return_code).toEqual(ERROR_CODE.NoError);
   expect(resp.error_message).toEqual("No errors");
@@ -79,150 +113,55 @@ test("showAddressAndPubKey", async () => {
   expect(resp).toHaveProperty("bech32_address");
   expect(resp).toHaveProperty("compressed_pk");
 
-  expect(resp.bech32_address).toEqual("terra1rpml0hh6kc8g6at2lsatzkd550yc2ngnsachtt");
-  expect(resp.compressed_pk.length).toEqual(33);
+  expect(resp.bech32_address).toEqual(TERRA_ADDRESS);
+  const pkBuffer = Buffer.from(resp.compressed_pk);
+  expect(pkBuffer.length).toEqual(33);
 });
 
-test("appInfo", async () => {
-  const transport = await TransportNodeHid.create(1000);
-  const app = new TerraApp(transport);
+test("get device info", async () => {
+  const resp = await app.getDeviceInfo();
 
-  const resp = await app.appInfo();
+  debug("deviceInfo", resp);
 
-  console.log(resp);
-
-  expect(resp.return_code).toEqual(ERROR_CODE.NoError);
-  expect(resp.error_message).toEqual("No errors");
-
-  expect(resp).toHaveProperty("appName");
-  expect(resp).toHaveProperty("appVersion");
-  expect(resp).toHaveProperty("flagLen");
-  expect(resp).toHaveProperty("flagsValue");
-  expect(resp).toHaveProperty("flag_recovery");
-  expect(resp).toHaveProperty("flag_signed_mcu_code");
-  expect(resp).toHaveProperty("flag_onboarded");
-  expect(resp).toHaveProperty("flag_pin_validated");
+  expect(resp.return_code).toEqual(0x6e00);
+  expect(resp.error_message).toEqual("This command is only available in the Dashboard");
 });
 
-test("deviceInfo", async () => {
-  const transport = await TransportNodeHid.create(1000);
-  const app = new TerraApp(transport);
-
-  const resp = await app.deviceInfo();
-
-  console.log(resp);
-
-  expect(resp.return_code).toEqual(ERROR_CODE.NoError);
-  expect(resp.error_message).toEqual("No errors");
-
-  expect(resp).toHaveProperty("targetId");
-  expect(resp).toHaveProperty("seVersion");
-  expect(resp).toHaveProperty("flag");
-  expect(resp).toHaveProperty("mcuVersion");
-});
-
-test("sign_and_verify", async () => {
+test("sign and verify", async () => {
   jest.setTimeout(60000);
-
-  const transport = await TransportNodeHid.create(1000);
-  const app = new TerraApp(transport);
 
   // Derivation path. First 3 items are automatically hardened!
   const path = [44, 330, 0, 0, 0];
   const message = String.raw`{"account_number":"6571","chain_id":"columbus-3","fee":{"amount":[{"amount":"5000","denom":"uluna"}],"gas":"200000"},"memo":"Delegated with Ledger from union.market","msgs":[{"type":"staking/MsgDelegate","value":{"amount":{"amount":"1000000","denom":"uluna"},"delegator_address":"terra102hty0jv2s29lyc4u0tv97z9v298e24thg5trl","validator_address":"terravaloper1grgelyng2v6v3t8z87wu3sxgt9m5s03x2mfyu7"}}],"sequence":"0"}`;
 
-  const responsePk = await app.publicKey(path);
-  console.log(responsePk);
-  expect(responsePk.return_code).toEqual(ERROR_CODE.NoError);
-  expect(responsePk.error_message).toEqual("No errors");
-
-  const responseSign = await app.sign(path, message);
-  console.log(responseSign);
-  expect(responseSign.return_code).toEqual(ERROR_CODE.NoError);
-  expect(responseSign.error_message).toEqual("No errors");
-
-  // Check signature is valid
-  const hash = crypto.createHash("sha256");
-  const msgHash = hash.update(message).digest();
-
-  const signatureDER = responseSign.signature;
-  const signature = secp256k1.signatureImport(signatureDER);
-  const signatureOk = secp256k1.verify(msgHash, signature, responsePk.compressed_pk);
-  expect(signatureOk).toEqual(true);
+  await testSign(path, message);
 });
 
-test("sign_tiny_memo", async () => {
+test("sign tiny memo", async () => {
   jest.setTimeout(60000);
-
-  const transport = await TransportNodeHid.create(1000);
-  const app = new TerraApp(transport);
-
   // Derivation path. First 3 items are automatically hardened!
   const path = [44, 330, 0, 0, 0];
   const message = String.raw`{"account_number":"0","chain_id":"test-chain-1","fee":{"amount":[{"amount":"5","denom":"photon"}],"gas":"10000"},"memo":"A","msgs":[{"inputs":[{"address":"cosmosaccaddr1d9h8qat5e4ehc5","coins":[{"amount":"10","denom":"luna"}]}],"outputs":[{"address":"cosmosaccaddr1da6hgur4wse3jx32","coins":[{"amount":"10","denom":"luna"}]}]}],"sequence":"1"}`;
 
-  const responsePk = await app.publicKey(path);
-  const responseSign = await app.sign(path, message);
-
-  console.log(responsePk);
-  console.log(responseSign);
-
-  expect(responsePk.return_code).toEqual(ERROR_CODE.NoError);
-  expect(responsePk.error_message).toEqual("No errors");
-  expect(responseSign.return_code).toEqual(ERROR_CODE.NoError);
-  expect(responseSign.error_message).toEqual("No errors");
-
-  // Check signature is valid
-  const hash = crypto.createHash("sha256");
-  const msgHash = hash.update(message).digest();
-
-  const signatureDER = responseSign.signature;
-  const signature = secp256k1.signatureImport(signatureDER);
-  const signatureOk = secp256k1.verify(msgHash, signature, responsePk.compressed_pk);
-  expect(signatureOk).toEqual(true);
+  await testSign(path, message);
 });
 
-test("sign_empty_memo", async () => {
+test("sign empty memo", async () => {
   jest.setTimeout(60000);
-
-  const transport = await TransportNodeHid.create(1000);
-  const app = new TerraApp(transport);
 
   // Derivation path. First 3 items are automatically hardened!
   const path = [44, 330, 0, 0, 0];
   const message = String.raw`{"account_number":"0","chain_id":"test-chain-1","fee":{"amount":[{"amount":"5","denom":"photon"}],"gas":"10000"},"memo":"","msgs":[{"inputs":[{"address":"cosmosaccaddr1d9h8qat5e4ehc5","coins":[{"amount":"10","denom":"luna"}]}],"outputs":[{"address":"cosmosaccaddr1da6hgur4wse3jx32","coins":[{"amount":"10","denom":"luna"}]}]}],"sequence":"1"}`;
 
-  const responsePk = await app.publicKey(path);
-  const responseSign = await app.sign(path, message);
-
-  console.log(responsePk);
-  console.log(responseSign);
-
-  expect(responsePk.return_code).toEqual(ERROR_CODE.NoError);
-  expect(responsePk.error_message).toEqual("No errors");
-  expect(responseSign.return_code).toEqual(ERROR_CODE.NoError);
-  expect(responseSign.error_message).toEqual("No errors");
-
-  // Check signature is valid
-  const hash = crypto.createHash("sha256");
-  const msgHash = hash.update(message).digest();
-
-  const signatureDER = responseSign.signature;
-  const signature = secp256k1.signatureImport(signatureDER);
-  const signatureOk = secp256k1.verify(msgHash, signature, responsePk.compressed_pk);
-  expect(signatureOk).toEqual(true);
+  await testSign(path, message);
 });
 
-test("sign_withdraw", async () => {
+test("sign withdraw", async () => {
   jest.setTimeout(60000);
-
-  const transport = await TransportNodeHid.create(1000);
-  const app = new TerraApp(transport);
 
   // Derivation path. First 3 items are automatically hardened!
   const path = [44, 330, 0, 0, 0];
-
-  const tx_str = {
+  const txObj = {
     account_number: "108",
     chain_id: "columbus-3",
     fee: {
@@ -268,34 +207,11 @@ test("sign_withdraw", async () => {
     sequence: "106",
   };
 
-  const message = JSON.stringify(tx_str);
-
-  const responsePk = await app.publicKey(path);
-  const responseSign = await app.sign(path, message);
-
-  console.log(responsePk);
-  console.log(responseSign);
-
-  expect(responsePk.return_code).toEqual(ERROR_CODE.NoError);
-  expect(responsePk.error_message).toEqual("No errors");
-  expect(responseSign.return_code).toEqual(ERROR_CODE.NoError);
-  expect(responseSign.error_message).toEqual("No errors");
-
-  // Check signature is valid
-  const hash = crypto.createHash("sha256");
-  const msgHash = hash.update(message).digest();
-
-  const signatureDER = responseSign.signature;
-  const signature = secp256k1.signatureImport(signatureDER);
-  const signatureOk = secp256k1.verify(msgHash, signature, responsePk.compressed_pk);
-  expect(signatureOk).toEqual(true);
+  await testSign(path, JSON.stringify(txObj));
 });
 
-test("sign_big_tx", async () => {
+test("sign big tx", async () => {
   jest.setTimeout(60000);
-
-  const transport = await TransportNodeHid.create(1000);
-  const app = new TerraApp(transport);
 
   const path = [44, 330, 0, 0, 0]; // Derivation path. First 3 items are automatically hardened!
   const message =
@@ -335,30 +251,26 @@ test("sign_big_tx", async () => {
     '"value":{"delegator_address":"terra14lultfckehtszvzw4ehu0apvsr77afvyhgqhwh","validator_address":' +
     '"terravaloper1hjct6q7npsspsg3dgvzk3sdf89spmlpfdn6m9d"}}],"sequence":"106"}';
 
-  const responsePk = await app.publicKey(path);
+  const responsePk = await app.getPublicKey(path);
   const responseSign = await app.sign(path, message);
 
-  console.log(responsePk);
-  console.log(responseSign);
+  debug("sign big tx", { responsePk, responseSign });
 
   expect(responsePk.return_code).toEqual(ERROR_CODE.NoError);
   expect(responsePk.error_message).toEqual("No errors");
 
-  switch (app.versionResponse.major) {
+  switch (app.getVersion().major) {
     case 1:
       expect(responseSign.return_code).toEqual(0x6984);
       expect(responseSign.error_message).toEqual("Data is invalid : JSON. Too many tokens");
       break;
     default:
-      expect.fail("Version not supported");
+      expect(false).toEqual(true);
   }
 });
 
-test("sign_invalid", async () => {
+test("sign invalid", async () => {
   jest.setTimeout(60000);
-
-  const transport = await TransportNodeHid.create(1000);
-  const app = new TerraApp(transport);
 
   const path = [44, 330, 0, 0, 0]; // Derivation path. First 3 items are automatically hardened!
   const invalidMessage =
@@ -366,15 +278,15 @@ test("sign_invalid", async () => {
 
   const responseSign = await app.sign(path, invalidMessage);
 
-  console.log(responseSign);
+  debug("sign invalid", { responseSign });
 
-  switch (app.versionResponse.major) {
+  switch (app.getVersion().major) {
     case 1:
       expect(responseSign.return_code).toEqual(0x6984);
       expect(responseSign.error_message).toEqual("Data is invalid : JSON Missing account number");
       break;
     default:
-      console.log("Version not supported");
+      debug("Version not supported");
       expect(false).toEqual(true);
   }
 });

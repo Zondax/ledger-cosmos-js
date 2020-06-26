@@ -1,5 +1,5 @@
 <template>
-  <div class="cosmosLedger">
+  <div class="terraLedger">
     <input id="webusb" v-model="transportChoice" type="radio" value="WebUSB" />
     <label for="webusb">WebUSB</label>
     <input id="u2f" v-model="transportChoice" type="radio" value="U2F" />
@@ -47,13 +47,13 @@
 import TransportWebUSB from "@ledgerhq/hw-transport-webusb";
 // eslint-disable-next-line import/no-extraneous-dependencies
 import TransportU2F from "@ledgerhq/hw-transport-u2f";
-import CosmosApp from "../../src";
-import { ERROR_CODE } from "../../src/common";
+import TerraApp from "../../src";
+import { ERROR_CODE } from "../../src/constants";
 
-const path = [44, 118, 5, 0, 3];
+const path = [44, 330, 0, 0, 0];
 
 export default {
-  name: "CosmosLedger",
+  name: "TerraLedger",
   props: {},
   data() {
     return {
@@ -100,7 +100,8 @@ export default {
 
       // Given a transport (U2F/HIF/WebUSB) it is possible instantiate the app
       const transport = await this.getTransport();
-      const app = new CosmosApp(transport);
+      const app = new TerraApp(transport);
+      await app.initialize();
 
       // now it is possible to access all commands in the app
       const response = await app.getVersion();
@@ -121,10 +122,11 @@ export default {
 
       // Given a transport (U2F/HIF/WebUSB) it is possible instantiate the app
       const transport = await this.getTransport();
-      const app = new CosmosApp(transport);
+      const app = new TerraApp(transport);
+      await app.initialize();
 
       // now it is possible to access all commands in the app
-      const response = await app.appInfo();
+      const response = await app.getInfo();
       if (response.return_code !== 0x9000) {
         this.log(`Error [${response.return_code}] ${response.error_message}`);
         return;
@@ -138,7 +140,8 @@ export default {
 
       // Given a transport (U2F/HIF/WebUSB) it is possible instantiate the app
       const transport = await this.getTransport();
-      const app = new CosmosApp(transport);
+      const app = new TerraApp(transport);
+      await app.initialize();
 
       let response = await app.getVersion();
       this.log(`App Version ${response.major}.${response.minor}.${response.patch}`);
@@ -146,7 +149,7 @@ export default {
       this.log(`Test mode: ${response.test_mode}`);
 
       // now it is possible to access all commands in the app
-      response = await app.publicKey(path);
+      response = await app.getPublicKey(path);
       if (response.return_code !== 0x9000) {
         this.log(`Error [${response.return_code}] ${response.error_message}`);
         return;
@@ -161,7 +164,8 @@ export default {
 
       // Given a transport (U2F/HIF/WebUSB) it is possible instantiate the app
       const transport = await this.getTransport();
-      const app = new CosmosApp(transport);
+      const app = new TerraApp(transport);
+      await app.initialize();
 
       let response = await app.getVersion();
       this.log(`App Version ${response.major}.${response.minor}.${response.patch}`);
@@ -169,7 +173,7 @@ export default {
       this.log(`Test mode: ${response.test_mode}`);
 
       // now it is possible to access all commands in the app
-      response = await app.getAddressAndPubKey(path, "cosmos");
+      response = await app.getAddressAndPubKey(path, "terra");
       if (response.return_code !== 0x9000) {
         this.log(`Error [${response.return_code}] ${response.error_message}`);
         return;
@@ -184,7 +188,8 @@ export default {
 
       // Given a transport (U2F/HIF/WebUSB) it is possible instantiate the app
       const transport = await this.getTransport();
-      const app = new CosmosApp(transport);
+      const app = new TerraApp(transport);
+      await app.initialize();
 
       let response = await app.getVersion();
       this.log(`App Version ${response.major}.${response.minor}.${response.patch}`);
@@ -193,7 +198,7 @@ export default {
 
       // now it is possible to access all commands in the app
       this.log("Please click in the device");
-      response = await app.showAddressAndPubKey(path, "cosmos");
+      response = await app.showAddressAndPubKey(path, "terra");
       if (response.return_code !== ERROR_CODE.NoError) {
         this.log(`Error [${response.return_code}] ${response.error_message}`);
         return;
@@ -208,7 +213,8 @@ export default {
 
       // Given a transport (U2F/HID/WebUSB) it is possible instantiate the app
       const transport = await this.getTransport();
-      const app = new CosmosApp(transport);
+      const app = new TerraApp(transport);
+      await app.initialize();
 
       let response = await app.getVersion();
       this.log(`App Version ${response.major}.${response.minor}.${response.patch}`);
