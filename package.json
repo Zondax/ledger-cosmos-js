@@ -26,7 +26,8 @@
     "@terra-money/terra.js": "^3.0.2",
     "@types/chrome": "^0.0.173",
     "bech32": "^1.1.4",
-    "ripemd160": "^2.0.2"
+    "ripemd160": "^2.0.2",
+    "semver": "^7.3.5"
   },
   "devDependencies": {
     "@ledgerhq/hw-transport-node-hid": "^5.51.1",
