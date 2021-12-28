@@ -6,6 +6,8 @@ import TransportNodeHid from '@ledgerhq/hw-transport-node-hid';
 
 async function main() {
   const lk = await LedgerKey.create(await TransportNodeHid.create(60 * 1000));
+  console.log(`accAddress: ${lk.accAddress} / publicKey: ${JSON.stringify(lk.publicKey)}`);
+
   const terra = new LCDClient({
     chainID: 'bombay-12',
     URL: 'https://bombay-lcd.terra.dev',

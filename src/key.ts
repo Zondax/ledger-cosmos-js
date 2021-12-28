@@ -3,7 +3,7 @@ import { AccAddress, ValAddress } from '@terra-money/terra.js';
 import { SimplePublicKey } from '@terra-money/terra.js';
 
 import Transport from '@ledgerhq/hw-transport';
-import { TerraApp } from './app';
+import TerraApp from './app';
 import { ERROR_CODE } from './constants'
 import { signatureImport } from 'secp256k1';
 import * as bech32 from 'bech32';
@@ -61,17 +61,6 @@ export class LedgerKey extends Key {
     return this.publicKey.address();
   }
 
-  /**
-   * Terra validator address. `terravaloper-` prefixed.
-   */
-  public get valAddress(): ValAddress {
-    if (!this.publicKey) {
-      throw new Error('Ledger is unintialized. Initialize it first.');
-    }
-
-    return bech32.encode('terravaloper', Array.from(this.publicKey.rawAddress()));
-  }
-
   /** 
    * create and return initialized ledger key
    */
@@ -113,17 +102,6 @@ export class LedgerKey extends Key {
     checkLedgerErrors(res);
     await this.loadAccountDetails();
   }
-
-
-  /**
-   * get terra app with transport
-  private async getTerraApp(): Promise<TerraApp> {
-    const app = new TerraApp(this.transport);
-    const res = await app.initialize();
-    checkLedgerErrors(res);
-    return app;
-  }
-   */
 
   /**
    * get Address and Pubkey from Ledger

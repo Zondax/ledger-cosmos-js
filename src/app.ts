@@ -40,7 +40,7 @@ import {
 const APP_NAME_TERRA = "Terra";
 const APP_NAME_COSMOS = "Cosmos";
 
-export class TerraApp {
+export default class TerraApp {
   private transport;
   private info: AppInfoResponse;
   private version: VersionResponse;
