@@ -1,13 +1,13 @@
 import * as crypto from "crypto";
 import * as secp256k1 from "secp256k1/elliptic";
 import TransportNodeHid from "@ledgerhq/hw-transport-node-hid";
-import TerraApp, { PublicKeyResponse, AddressResponse, SignResponse  } from "../src";
-import { ERROR_CODE} from "../src/constants";
+import TerraApp, { PublicKeyResponse, AddressResponse, SignResponse } from "../src";
+import { ERROR_CODE } from "../src/constants";
 
 const debug = require("debug")("ledger-terra-js");
 
-const TERRA_ADDRESS = "terra1rpml0hh6kc8g6at2lsatzkd550yc2ngnsachtt";
-const TERRA_HEX_PUBLIC_KEY = "03028f0d5a9fd41600191cdefdea05e77a68dfbce286241c0190805b9346667d07";
+const TERRA_ADDRESS = "terra1c5e6d638ujm3m3qxtg2um3xgasfu2u6dwf8ry0";
+const TERRA_HEX_PUBLIC_KEY = "026b4339d261cd771c2fe22b1815794535d5d5a6596fd3472044b4ea8fb641a99d";
 // const TERRA_ADDRESS = "terra1lnl5tm84drx69qtygrj40steyvyk5emngeclcc";
 // const TERRA_HEX_PUBLIC_KEY = "03ad97b6e920dda87454196c7899ed0bfd0a958b6f45a7235e6bde7359f04f0be1";
 
@@ -29,8 +29,8 @@ async function testSign(path: number[], message: string) {
     const hash = crypto.createHash("sha256");
     const msgHash = hash.update(message).digest();
 
-    const signature = secp256k1.signatureImport(Buffer.from(responseSign.signature));
-    const signatureOk = secp256k1.verify(msgHash, signature, Buffer.from(responsePk.compressed_pk));
+    const signature = secp256k1.signatureImport(Buffer.from(responseSign.signature.data));
+    const signatureOk = secp256k1.verify(msgHash, signature, Buffer.from(responsePk.compressed_pk.data));
     expect(signatureOk).toEqual(true);
   }
 }
@@ -40,11 +40,11 @@ jest.setTimeout(60000);
 let transport;
 let app: TerraApp;
 
-beforeAll(async (done) => {
+beforeAll(async () => {
   transport = await TransportNodeHid.create(1000);
   app = new TerraApp(transport);
   await app.initialize();
-  done();
+  //done();
 });
 
 test("get version", async () => {
@@ -72,7 +72,7 @@ test("publicKey", async () => {
   expect(resp.compressed_pk).not.toBeNull();
 
   if (resp.compressed_pk) {
-    const pkBuffer = Buffer.from(resp.compressed_pk);
+    const pkBuffer = Buffer.from(resp.compressed_pk.data);
     expect(pkBuffer.length).toEqual(33);
     expect(pkBuffer.toString("hex")).toEqual(TERRA_HEX_PUBLIC_KEY);
   }
@@ -94,7 +94,7 @@ test("getAddressAndPubKey", async () => {
   expect(resp).toHaveProperty("compressed_pk");
 
   expect(resp.bech32_address).toEqual(TERRA_ADDRESS);
-  const pkBuffer = Buffer.from(resp.compressed_pk);
+  const pkBuffer = Buffer.from(resp.compressed_pk.data);
   expect(pkBuffer.length).toEqual(33);
 });
 
@@ -114,7 +114,7 @@ test("show address and public key", async () => {
   expect(resp).toHaveProperty("compressed_pk");
 
   expect(resp.bech32_address).toEqual(TERRA_ADDRESS);
-  const pkBuffer = Buffer.from(resp.compressed_pk);
+  const pkBuffer = Buffer.from(resp.compressed_pk.data);
   expect(pkBuffer.length).toEqual(33);
 });
 
@@ -261,8 +261,8 @@ test("sign big tx", async () => {
 
   switch (app.getVersion().major) {
     case 1:
-      expect(responseSign.return_code).toEqual(0x6984);
-      expect(responseSign.error_message).toEqual("Data is invalid : JSON. Too many tokens");
+      expect(responseSign.return_code).toEqual(0x9000);
+      expect(responseSign.error_message).toEqual("No errors");
       break;
     default:
       expect(false).toEqual(true);
