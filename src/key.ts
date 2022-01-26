@@ -1,5 +1,5 @@
 import { Key } from '@terra-money/terra.js';
-import { AccAddress, ValAddress } from '@terra-money/terra.js';
+import { AccAddress } from '@terra-money/terra.js';
 import { SimplePublicKey } from '@terra-money/terra.js';
 
 import Transport from '@ledgerhq/hw-transport';
@@ -64,11 +64,16 @@ export class LedgerKey extends Key {
   /** 
    * create and return initialized ledger key
    */
-  public static async create(transport?: Transport): Promise<LedgerKey> {
+  public static async create(transport?: Transport, index?: number): Promise<LedgerKey> {
+
     if (!transport) {
       transport = await createTransport();
     }
     const key = new LedgerKey(transport);
+
+    if (index != undefined) {
+      key.path[4] = index
+    }
 
     if (transport && typeof transport.on === "function") {
       transport.on("disconnect", () => {
