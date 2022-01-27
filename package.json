@@ -22,6 +22,7 @@
   "homepage": "https://github.com/terra-project/ledger-terra-js",
   "dependencies": {
     "@ledgerhq/hw-transport": "^5.51.1",
+    "@ledgerhq/hw-transport-mocker": "^6.20.0",
     "@ledgerhq/hw-transport-webhid": "^6.20.0",
     "@ledgerhq/hw-transport-webusb": "^6.20.0",
     "@terra-money/terra.js": "^3.0.6",
@@ -61,6 +62,7 @@
   "scripts": {
     "build": "tsc",
     "test:unit": "jest -c jest.config.unit.js --runInBand --detectOpenHandles",
+    "test:ci": "jest tests/basic.spec.ts --runInBand --detectOpenHandles",
     "test:integration": "jest -c jest.config.integration.js --runInBand --detectOpenHandles",
     "serve": "openssl req -nodes -new -x509 -config certs/openssl.cnf -keyout certs/server.key -out certs/server.cert; openssl x509 -in certs/server.cert -out certs/cert.pem -outform PEM; vue-cli-service serve vue_example/main.js"
   },
