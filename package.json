@@ -1,27 +1,29 @@
 {
   "name": "ledger-cosmos-js",
-  "version": "0.0.0",
-  "description": "Node API for Cosmos App (Ledger Nano S/X)",
+  "author": "ZondaX AG",
+  "license": "Apache-2.0",
+  "version": "3.0.0",
+  "description": "Node API for Cosmos App (Ledger Nano S/S+/X)",
   "main": "./dist/index.js",
+  "typings": "./dist/index.d.ts",
+  "types": "./dist/index.d.ts",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/zondax/ledger-cosmos-js.git"
+    "url": "git+https://github.com/cosmos/ledger-cosmos-js.git"
   },
   "keywords": [
     "Ledger",
-    "Javascript",
+    "Typescript",
     "Tendermint",
     "Cosmos"
   ],
-  "author": "ZondaX GmbH",
-  "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/zondax/ledger-cosmos-js/issues"
+    "url": "https://github.com/cosmos/ledger-cosmos-js/issues"
   },
-  "homepage": "https://github.com/zondax/ledger-cosmos-js",
+  "homepage": "https://github.com/cosmos/ledger-cosmos-js",
   "dependencies": {
     "@babel/runtime": "^7.11.2",
-    "@ledgerhq/hw-transport": "^5.25.0",
+    "@ledgerhq/hw-transport": "^6.2.0",
     "bech32": "^1.1.4",
     "ripemd160": "^2.0.2"
   },
@@ -57,13 +59,11 @@
     "prettier": "^2.1.2",
     "secp256k1": "^4.0.2",
     "vue": "^2.6.12",
-    "vue-template-compiler": "^2.6.12"
-  },
-  "scripts": {
-    "build": "babel src --out-dir dist",
-    "test:unit": "jest -c jest.config.unit.js",
-    "test:integration": "jest -c jest.config.integration.js --runInBand --detectOpenHandles",
-    "serve": "openssl req -nodes -new -x509 -config certs/openssl.cnf -keyout certs/server.key -out certs/server.cert; openssl x509 -in certs/server.cert -out certs/cert.pem -outform PEM; vue-cli-service serve vue_example/main.js"
+    "vue-template-compiler": "^2.6.12",
+    "ts-jest": "^26",
+    "typescript": "^4.3.5",
+    "copyfiles": "^2.4.1",
+    "ts-node": "^10.8.1"
   },
   "moduleDirectories": [
     "node_modules",
@@ -78,7 +78,24 @@
     "> 1%",
     "last 2 versions"
   ],
+  "files": [
+    "dist/*",
+    "LICENSE",
+    "yarn.lock"
+  ],
   "publishConfig": {
     "access": "public"
+  },
+  "peerDependencies": {
+    "@babel/core": "^7.17.5",
+    "@types/node": "^17.0.21"
+  },
+  "scripts": {
+    "build": "tsc && yarn copy-files",
+    "copy-files": "copyfiles -u 0 src/**/*.proto dist/",
+
+    "test:unit": "jest -c jest.config.unit.js",
+    "test:integration": "jest -c jest.config.integration.js --runInBand --detectOpenHandles",
+    "serve": "openssl req -nodes -new -x509 -config certs/openssl.cnf -keyout certs/server.key -out certs/server.cert; openssl x509 -in certs/server.cert -out certs/cert.pem -outform PEM; vue-cli-service serve vue_example/main.js"
   }
 }
