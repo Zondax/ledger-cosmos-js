@@ -1,0 +1,46 @@
+name: 'Publish packages'
+
+on:
+  release:
+    types:
+      - published
+      - edited
+    tags:
+      - "v[0-9]+(\\.[0-9]+)*"
+
+jobs:
+  configure:
+    runs-on: ubuntu-latest
+    outputs:
+      datetime: ${{ steps.get-datetime.outputs.datetime }}
+    steps:
+      - id: get-datetime
+        run: echo "::set-output name=datetime::$(date +'%Y%m%d%H%M%S')"
+
+  publish_npm_package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Install node
+        uses: actions/setup-node@v2
+        with:
+          registry-url: 'https://registry.npmjs.org'
+          scope: '@zondax'
+      - run: mv README-npm.md README.md
+      - name: Install yarn
+        run: npm install -g yarn
+      - run: yarn install
+      - run: yarn build
+      - name: Get latest release version number
+        id: get_version
+        uses: battila7/get-version-action@v2
+      - name: Update tag
+        run: |
+          echo Publishing as ${{ steps.get_version.outputs.version }}
+          npm --allow-same-version --no-git-tag-version version ${{ steps.get_version.outputs.version }}
+      - name: Publish package
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN_PUBLISH_AUTO }}
+        run: |
+          npm publish

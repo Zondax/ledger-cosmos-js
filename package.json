@@ -91,6 +91,8 @@
     "copy-files": "copyfiles -u 0 src/**/*.proto dist/",
     "test:integration": "yarn build && jest -t 'Integration'",
     "test:unit": "yarn build && jest tests/basic_unit.test.ts",
-    "serve": "openssl req -nodes -new -x509 -config certs/openssl.cnf -keyout certs/server.key -out certs/server.cert; openssl x509 -in certs/server.cert -out certs/cert.pem -outform PEM; vue-cli-service serve vue_example/main.js"
+    "serve": "openssl req -nodes -new -x509 -config certs/openssl.cnf -keyout certs/server.key -out certs/server.cert; openssl x509 -in certs/server.cert -out certs/cert.pem -outform PEM; vue-cli-service serve vue_example/main.js",
+    "linter": "eslint --ext .ts,.tsx,.js,.jsx --ignore-path .eslintignore . --max-warnings 0",
+    "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md}\""
   }
 }
