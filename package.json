@@ -1,5 +1,5 @@
 {
-  "name": "ledger-cosmos-js",
+  "name": "@zondax/ledger-cosmos-js",
   "author": "ZondaX AG",
   "license": "Apache-2.0",
   "version": "3.0.0",
