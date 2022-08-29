@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "strict": true,
+    "esModuleInterop": true,
+    "declaration": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "outDir": "./dist",
+    "sourceMap": true,
+    "inlineSources": true,
+    "moduleResolution": "node"
+  },
+  "ts-node": {
+    "swc": true
+  },
+  "exclude": ["node_modules", "tests", "./dist/**"]
+}

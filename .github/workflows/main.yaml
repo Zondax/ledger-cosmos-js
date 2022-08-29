@@ -1,0 +1,36 @@
+name: 'Main'
+on:
+  - push
+
+jobs:
+  configure:
+    runs-on: ubuntu-latest
+    outputs:
+      uid_gid: ${{ steps.get-user.outputs.uid_gid }}
+      datetime: ${{ steps.get-datetime.outputs.datetime }}
+    steps:
+      - id: get-user
+        run: echo "::set-output name=uid_gid::$(id -u):$(id -g)"
+      - id: get-datetime
+        run: echo "::set-output name=datetime::$(date +'%Y%m%d%H%M%S')"
+
+  build:
+    needs: [configure]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+      - name: Install node
+        uses: actions/setup-node@v2
+      - name: Install dependencies
+        run: yarn install
+      - name: Run linter
+        run: yarn linter
+      - name: Run formatter
+        run: yarn format
+      - name: Build
+        run: yarn build
+      - name: Unit tests
+        run: yarn test:unit
