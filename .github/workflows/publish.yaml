@@ -27,6 +27,7 @@ jobs:
         with:
           registry-url: 'https://registry.npmjs.org'
           scope: '@zondax'
+      - run: mv README-npm.md README.md
       - name: Install yarn
         run: npm install -g yarn
       - run: yarn install
