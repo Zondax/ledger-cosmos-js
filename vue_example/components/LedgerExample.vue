@@ -47,7 +47,7 @@
 import TransportWebUSB from "@ledgerhq/hw-transport-webusb";
 // eslint-disable-next-line import/no-extraneous-dependencies
 import TransportU2F from "@ledgerhq/hw-transport-u2f";
-import CosmosApp from "../../src";
+import { CosmosApp } from "../../src";
 import { ERROR_CODE } from "../../src/common";
 
 const path = [44, 118, 5, 0, 3];
