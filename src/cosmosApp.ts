@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  ******************************************************************************* */
-import { CHUNK_SIZE, CLA, INS, errorCodeToString, getVersion, processErrorResponse, ERROR_CODE, P1_VALUES } from './common'
+import { CHUNK_SIZE, CLA, INS, errorCodeToString, getVersion, processErrorResponse, ERROR_CODE, P1_VALUES, P2_VALUES } from './common'
 
 import Transport from '@ledgerhq/hw-transport'
 import { publicKeyv1, serializePathv1, signSendChunkv1 } from './commandsV1'
@@ -71,12 +71,11 @@ export class CosmosApp {
     }
   }
 
-  async signGetChunks(path: number[], message: string) {
+  async signGetChunks(path: number[], buffer: Buffer) {
     const serializedPath = await this.serializePath(path)
 
     const chunks = []
     chunks.push(serializedPath)
-    const buffer = Buffer.from(message)
 
     for (let i = 0; i < buffer.length; i += CHUNK_SIZE) {
       let end = i + CHUNK_SIZE
@@ -244,12 +243,12 @@ export class CosmosApp {
     return this.getAddressAndPubKey(path, hrp, true)
   }
 
-  async signSendChunk(chunkIdx: number, chunkNum: number, chunk: Buffer) {
+  async signSendChunk(chunkIdx: number, chunkNum: number, chunk: Buffer, txType = P2_VALUES.JSON) {
     switch (this.versionResponse.major) {
       case 1:
-        return signSendChunkv1(this, chunkIdx, chunkNum, chunk)
+        return signSendChunkv1(this, chunkIdx, chunkNum, chunk, txType)
       case 2:
-        return signSendChunkv2(this, chunkIdx, chunkNum, chunk)
+        return signSendChunkv2(this, chunkIdx, chunkNum, chunk, txType)
       default:
         return {
           return_code: 0x6400,
@@ -258,9 +257,9 @@ export class CosmosApp {
     }
   }
 
-  async sign(path: number[], message: string) {
-    return this.signGetChunks(path, message).then(chunks => {
-      return this.signSendChunk(1, chunks.length, chunks[0]).then(async response => {
+  async sign(path: number[], buffer: Buffer, txType = P2_VALUES.JSON) {
+    return this.signGetChunks(path, buffer).then(chunks => {
+      return this.signSendChunk(1, chunks.length, chunks[0], txType).then(async response => {
         let result = {
           return_code: response.return_code,
           error_message: response.error_message,
@@ -269,7 +268,7 @@ export class CosmosApp {
 
         for (let i = 1; i < chunks.length; i += 1) {
           // eslint-disable-next-line no-await-in-loop
-          result = await this.signSendChunk(1 + i, chunks.length, chunks[i])
+          result = await this.signSendChunk(1 + i, chunks.length, chunks[i], txType)
           if (result.return_code !== ERROR_CODE.NoError) {
             break
           }

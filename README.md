@@ -23,11 +23,12 @@ We recommend using the npmjs package in order to receive updates/fixes.
 | showAddressAndPubKey       | signed message   | path              |
 | appInfo       | name, version, flags, etc   | ---------------                |
 | deviceInfo       | fw and mcu version, id, etc   | Only available in dashboard             |
-| sign       | signed message   | path + message                    |
+| sign       | signed message   | path  + transaction type +  message                    |
 
 
 getAddress command requires that you set the derivation path (account, change, index) and has an option parameter to display the address on the device. By default, it will retrieve the information without user confirmation.
 
+sign command requires that you specify the transaction type, with one of the available types: 0 for json transaction or 1 for textual transaction.
 
 # Testing with real devices
 

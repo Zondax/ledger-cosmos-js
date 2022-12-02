@@ -14,7 +14,7 @@
  *  limitations under the License.
  ******************************************************************************* */
 import { signSendChunkv1 } from './commandsV1'
-import { CLA, ERROR_CODE, errorCodeToString, INS, PAYLOAD_TYPE, processErrorResponse } from './common'
+import { CLA, ERROR_CODE, errorCodeToString, INS, PAYLOAD_TYPE, processErrorResponse, P2_VALUES } from './common'
 
 export function serializePathv2(path: number[]) {
   if (!path || path.length !== 5) {
@@ -31,7 +31,7 @@ export function serializePathv2(path: number[]) {
   return buf
 }
 
-export async function signSendChunkv2(app: any, chunkIdx: number, chunkNum: number, chunk: Buffer) {
+export async function signSendChunkv2(app: any, chunkIdx: number, chunkNum: number, chunk: Buffer, txType = P2_VALUES.JSON) {
   let payloadType = PAYLOAD_TYPE.ADD
   if (chunkIdx === 1) {
     payloadType = PAYLOAD_TYPE.INIT
@@ -40,7 +40,7 @@ export async function signSendChunkv2(app: any, chunkIdx: number, chunkNum: numb
     payloadType = PAYLOAD_TYPE.LAST
   }
 
-  return signSendChunkv1(app, payloadType, 0, chunk)
+  return signSendChunkv1(app, payloadType, 0, chunk, txType)
 }
 
 export async function publicKeyv2(app: any, data: Buffer) {
