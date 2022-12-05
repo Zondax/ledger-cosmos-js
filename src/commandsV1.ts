@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  ******************************************************************************* */
-import { CLA, ERROR_CODE, errorCodeToString, INS, processErrorResponse } from './common'
+import { CLA, ERROR_CODE, errorCodeToString, INS, processErrorResponse, P2_VALUES } from './common'
 
 export function serializePathv1(path: number[]) {
   if (path == null || path.length < 3) {
@@ -35,9 +35,9 @@ export function serializePathv1(path: number[]) {
   return buf
 }
 
-export async function signSendChunkv1(app: any, chunkIdx: number, chunkNum: number, chunk: Buffer) {
+export async function signSendChunkv1(app: any, chunkIdx: number, chunkNum: number, chunk: Buffer, txType = P2_VALUES.JSON) {
   return app.transport
-    .send(CLA, INS.SIGN_SECP256K1, chunkIdx, chunkNum, chunk, [ERROR_CODE.NoError, 0x6984, 0x6a80])
+    .send(CLA, INS.SIGN_SECP256K1, chunkIdx, txType, chunk, [ERROR_CODE.NoError, 0x6984, 0x6a80])
     .then((response: any) => {
       const errorCodeData = response.slice(-2)
       const returnCode = errorCodeData[0] * 256 + errorCodeData[1]

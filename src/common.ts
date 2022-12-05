@@ -36,6 +36,11 @@ export const P1_VALUES = {
   SHOW_ADDRESS_IN_DEVICE: 0x01,
 }
 
+export const P2_VALUES = {
+  JSON: 0x0,
+  TEXTUAL: 0x1,
+}
+
 export const ERROR_CODE = {
   NoError: 0x9000,
 }
