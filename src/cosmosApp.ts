@@ -71,18 +71,19 @@ export class CosmosApp {
     }
   }
 
-  async signGetChunks(path: number[], buffer: Buffer) {
+  async prepareChunks(path: number[], buffer: Buffer, hrp: string | undefined) {
     const serializedPath = await this.serializePath(path)
+    const firstChunk = hrp === undefined ? serializedPath : Buffer.concat([serializedPath, CosmosApp.serializeHRP(hrp)])
 
     const chunks = []
-    chunks.push(serializedPath)
+    chunks.push(firstChunk)
 
     for (let i = 0; i < buffer.length; i += CHUNK_SIZE) {
       let end = i + CHUNK_SIZE
       if (i > buffer.length) {
         end = buffer.length
       }
-      chunks.push(buffer.slice(i, end))
+      chunks.push(buffer.subarray(i, end))
     }
 
     return chunks
@@ -220,7 +221,9 @@ export class CosmosApp {
       .then((serializedPath: Buffer) => {
         const data = Buffer.concat([CosmosApp.serializeHRP(hrp), serializedPath])
         return this.transport
-          .send(CLA, INS.GET_ADDR_SECP256K1, showInDevice ? P1_VALUES.SHOW_ADDRESS_IN_DEVICE : P1_VALUES.ONLY_RETRIEVE, 0, data, [ERROR_CODE.NoError])
+          .send(CLA, INS.GET_ADDR_SECP256K1, showInDevice ? P1_VALUES.SHOW_ADDRESS_IN_DEVICE : P1_VALUES.ONLY_RETRIEVE, 0, data, [
+            ERROR_CODE.NoError,
+          ])
           .then((response: any) => {
             const errorCodeData = response.slice(-2)
             const returnCode = errorCodeData[0] * 256 + errorCodeData[1]
@@ -257,8 +260,8 @@ export class CosmosApp {
     }
   }
 
-  async sign(path: number[], buffer: Buffer, txType = P2_VALUES.JSON) {
-    return this.signGetChunks(path, buffer).then(chunks => {
+  async sign(path: number[], buffer: Buffer, hrp: string | undefined, txType = P2_VALUES.JSON) {
+    return this.prepareChunks(path, buffer, hrp).then(chunks => {
       return this.signSendChunk(1, chunks.length, chunks[0], txType).then(async response => {
         let result = {
           return_code: response.return_code,
