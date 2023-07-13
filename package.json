@@ -1,8 +1,8 @@
 {
   "name": "@zondax/ledger-cosmos-js",
-  "author": "ZondaX AG",
+  "author": "Zondax AG",
   "license": "Apache-2.0",
-  "version": "3.0.1",
+  "version": "3.0.3",
   "description": "Node API for Cosmos App (Ledger Nano S/S+/X)",
   "main": "./dist/index.js",
   "typings": "./dist/index.d.ts",

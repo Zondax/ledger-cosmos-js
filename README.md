@@ -4,8 +4,8 @@
 ![zondax_dark](docs/zondax_dark.png#gh-dark-mode-only)
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Main](https://github.com/Zondax/ledger-cosmos-js/workflows/Main/badge.svg)](https://github.com/Zondax/ledger-cosmos-js/actions?query=workflow%3AMain)
-[![npm version](https://badge.fury.io/js/%40zondax%2Fledger-cosmos-js.svg)](https://badge.fury.io/js/%40zondax%2Fledger-cosmos-js)
+[![Main](https://github.com/cosmos/ledger-cosmos-js/workflows/Main/badge.svg)](https://github.com/cosmos/ledger-cosmos-js/actions?query=workflow%3AMain)
+[![npm version](https://badge.fury.io/js/%40cosmos%2Fledger-cosmos-js.svg)](https://badge.fury.io/js/%40cosmos%2Fledger-cosmos-js)
 
 This package provides a basic client library to communicate with a Tendermint/Cosmos App running in a Ledger Nano S/S+/X devices
 
