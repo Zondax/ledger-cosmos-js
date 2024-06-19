@@ -90,9 +90,9 @@ describe("CosmosApp Address Generation", () => {
     const transport = new MockTransport(responseBuffer);
     const app = new CosmosApp(transport);
     try {
-      const resp = await app.getAddressAndPubKey("m/44'/118'/2147483647'/0/4294967295", "cosmos");
+      const resp = await app.getAddressAndPubKey("m/44'/2147483647'/0'/0/4294967295", "cosmos");
     } catch (e: any) {
-      expect(e.message).toEqual("Incorrect child value (bigger or equal to 0x80000000)");
+      expect(e.returnCode).toEqual(0xffff);
     }
   });
 });

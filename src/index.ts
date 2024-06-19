@@ -17,9 +17,11 @@ import { ResponseSign, type ResponseAddress, type ResponsePubkey } from "./types
 import { CLA, P1_VALUES, P2_VALUES, PKLEN } from "./consts";
 import type Transport from "@ledgerhq/hw-transport";
 import BaseApp, {
+  HARDENED,
   INSGeneric,
   LedgerError,
   PAYLOAD_TYPE,
+  ResponseError,
   ResponsePayload,
   processErrorResponse,
   processResponse,
@@ -70,8 +72,59 @@ export default class CosmosApp extends BaseApp {
     return buf.getCompleteBuffer();
   }
 
+  private serializeCosmosPath(path: string) {
+    if (typeof path !== "string") {
+      // NOTE: this is probably unnecessary
+      throw new ResponseError(
+        LedgerError.GenericError,
+        "Path should be a string (e.g \"m/44'/461'/5'/0/3\")",
+      );
+    }
+
+    if (!path.startsWith("m/")) {
+      throw new ResponseError(
+        LedgerError.GenericError,
+        'Path should start with "m/" (e.g "m/44\'/461\'/5\'/0/3")',
+      );
+    }
+
+    const pathArray = path.split("/");
+    pathArray.shift(); // remove "m"
+
+    if (
+      this.REQUIRED_PATH_LENGTHS &&
+      this.REQUIRED_PATH_LENGTHS.length > 0 &&
+      !this.REQUIRED_PATH_LENGTHS.includes(pathArray.length)
+    ) {
+      throw new ResponseError(LedgerError.GenericError, "Invalid path length. (e.g \"m/44'/5757'/5'/0/3\")");
+    }
+
+    const buf = new ByteStream();
+    pathArray.forEach((child: string, i: number) => {
+      let value = 0;
+
+      if (child.endsWith("'")) {
+        value += HARDENED;
+        child = child.slice(0, -1);
+      }
+
+      const numChild = Number(child);
+
+      if (Number.isNaN(numChild)) {
+        throw new ResponseError(
+          LedgerError.GenericError,
+          `Invalid path : ${child} is not a number. (e.g "m/44'/461'/5'/0/3")`,
+        );
+      }
+      value += numChild;
+      buf.appendUint32(value);
+    });
+
+    return buf.getCompleteBuffer();
+  }
+
   async publicKey(path: string): Promise<ResponsePubkey> {
-    const serializedPath = await this.serializePath(path);
+    const serializedPath = await this.serializeCosmosPath(path);
     const data = Buffer.concat([this.serializeHRP("cosmos"), serializedPath]);
 
     try {
@@ -88,13 +141,13 @@ export default class CosmosApp extends BaseApp {
   }
 
   async getAddressAndPubKey(path: string, hrp: string): Promise<ResponseAddress> {
-    try {
-      const serializedPath = await this.serializePath(path);
-      const data = Buffer.concat([this.serializeHRP(hrp), serializedPath]);
+    const serializedPath = await this.serializeCosmosPath(path);
+    const data = Buffer.concat([this.serializeHRP(hrp), serializedPath]);
 
+    try {
       const responseBuffer = await this.transport.send(
         this.CLA,
-        this.INS.GET_ADDR,
+        this.INS.GET_ADDR_SECP256K1,
         P1_VALUES.ONLY_RETRIEVE,
         0,
         data,
@@ -114,20 +167,19 @@ export default class CosmosApp extends BaseApp {
   }
 
   async showAddressAndPubKey(path: string, hrp: string): Promise<ResponseAddress> {
-    const serializedPath = await this.serializePath(path);
+    const serializedPath = await this.serializeCosmosPath(path);
     const data = Buffer.concat([this.serializeHRP(hrp), serializedPath]);
 
     try {
       const responseBuffer = await this.transport.send(
         this.CLA,
-        this.INS.GET_ADDR,
+        this.INS.GET_ADDR_SECP256K1,
         P1_VALUES.SHOW_ADDRESS_IN_DEVICE,
         0,
         data,
       );
 
       const response = processResponse(responseBuffer);
-
       const compressed_pk = response.readBytes(PKLEN);
       const bech32_address = response.readBytes(response.length()).toString();
 
@@ -150,7 +202,7 @@ export default class CosmosApp extends BaseApp {
   }
 
   async prepareChunks_hrp(path: string, buffer: Buffer, hrp: string | undefined) {
-    const serializedPath = await this.serializePath(path);
+    const serializedPath = await this.serializeCosmosPath(path);
     const firstChunk =
       hrp === undefined ? serializedPath : Buffer.concat([serializedPath, this.serializeHRP(hrp)]);
 
@@ -220,7 +272,12 @@ export default class CosmosApp extends BaseApp {
     }
   }
 
-  async sign(path: string, buffer: Buffer, hrp: string | undefined, txtype: number): Promise<ResponseSign> {
+  async sign(
+    path: string,
+    buffer: Buffer,
+    hrp: string | undefined,
+    txtype = P2_VALUES.JSON,
+  ): Promise<ResponseSign> {
     return await this.signImpl(path, buffer, hrp, txtype);
   }
 }
