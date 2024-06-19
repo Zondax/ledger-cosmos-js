@@ -13,9 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  ******************************************************************************* */
-
 export const CLA = 0x55;
-export const APP_KEY = "CSM";
 
 export const enum P1_VALUES {
   ONLY_RETRIEVE = 0x00,

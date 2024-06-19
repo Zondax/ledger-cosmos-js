@@ -28,9 +28,7 @@
     "@ledgerhq/hw-transport-node-hid-noevents": "6.27.1"
   },
   "dependencies": {
-    "@babel/runtime": "^7.24.7",
     "@ledgerhq/hw-transport": "6.30.6",
-    "@ledgerhq/hw-transport-u2f": "^5.36.0-deprecated",
     "@zondax/ledger-js": "^0.10.0",
     "bech32": "^2.0.0",
     "buffer": "^6.0.3",
@@ -40,11 +38,6 @@
     "stream-browserify": "^3.0.0"
   },
   "devDependencies": {
-    "@babel/cli": "^7.24.7",
-    "@babel/core": "^7.24.7",
-    "@babel/node": "^7.24.7",
-    "@babel/plugin-transform-runtime": "^7.24.7",
-    "@babel/preset-env": "^7.24.7",
     "@ledgerhq/hw-transport-node-hid": "6.28.6",
     "@ledgerhq/hw-transport-webusb": "6.28.6",
     "@ledgerhq/hw-transport-mocker": "^6.28.6",
@@ -54,8 +47,6 @@
     "@types/node": "^20.14.2",
     "@typescript-eslint/eslint-plugin": "^7.13.0",
     "@typescript-eslint/parser": "^7.13.0",
-    "babel-eslint": "^10.1.0",
-    "babel-jest": "^29.7.0",
     "bip32": "4.0.0",
     "bip39": "3.1.0",
     "copyfiles": "^2.4.1",
