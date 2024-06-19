@@ -13,14 +13,16 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  ******************************************************************************* */
+export const CLA = 0x55;
 
-import { CosmosApp } from '../src/cosmosApp'
+export const enum P1_VALUES {
+  ONLY_RETRIEVE = 0x00,
+  SHOW_ADDRESS_IN_DEVICE = 0x01,
+}
 
-describe('UnitTest', function () {
-  test('check address conversion', async () => {
-    const pkStr = '034fef9cd7c4c63588d3b03feb5281b9d232cba34d6f3d71aee59211ffbfe1fe87'
-    const pk = Buffer.from(pkStr, 'hex')
-    const addr = CosmosApp.getBech32FromPK('cosmos', pk)
-    expect(addr).toEqual('cosmos1w34k53py5v5xyluazqpq65agyajavep2rflq6h')
-  })
-})
+export const enum P2_VALUES {
+  JSON = 0x0,
+  TEXTUAL = 0x1,
+}
+
+export const PKLEN = 33;
