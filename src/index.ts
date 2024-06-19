@@ -24,6 +24,7 @@ import BaseApp, {
   processErrorResponse,
   processResponse,
 } from "@zondax/ledger-js";
+import { ByteStream } from "@zondax/ledger-js/dist/byteStream";
 
 const crypto = require("crypto");
 const bech32 = require("bech32");
@@ -61,10 +62,12 @@ export default class CosmosApp extends BaseApp {
     if (hrp == null || hrp.length < 3 || hrp.length > 83) {
       throw new Error("Invalid HRP");
     }
-    const buf = Buffer.alloc(1 + hrp.length);
-    buf.writeUInt8(hrp.length, 0);
-    buf.write(hrp, 1);
-    return buf;
+
+    const buf = new ByteStream();
+    buf.appendUint8(hrp.length);
+    buf.appendBytes(Buffer.from(hrp));
+
+    return buf.getCompleteBuffer();
   }
 
   async publicKey(path: string): Promise<ResponsePubkey> {
@@ -98,8 +101,8 @@ export default class CosmosApp extends BaseApp {
       );
 
       const response = processResponse(responseBuffer);
-      const compressed_pk = Buffer.from(response.readBytes(PKLEN));
-      const bech32_address = Buffer.from(response.readBytes(response.length())).toString();
+      const compressed_pk = response.readBytes(PKLEN);
+      const bech32_address = response.readBytes(response.length()).toString();
 
       return {
         compressed_pk,
@@ -125,8 +128,8 @@ export default class CosmosApp extends BaseApp {
 
       const response = processResponse(responseBuffer);
 
-      const compressed_pk = Buffer.from(response.readBytes(PKLEN));
-      const bech32_address = Buffer.from(response.readBytes(response.length())).toString();
+      const compressed_pk = response.readBytes(PKLEN);
+      const bech32_address = response.readBytes(response.length()).toString();
 
       return {
         compressed_pk,
