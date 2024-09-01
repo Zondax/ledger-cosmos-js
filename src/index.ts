@@ -35,15 +35,15 @@ import { bech32 } from '@scure/base'
 
 export default class CosmosApp extends BaseApp {
   static _INS = {
-    GET_VERSION: 0x00 as number,
-    SIGN_SECP256K1: 0x02 as number,
-    GET_ADDR_SECP256K1: 0x04 as number,
+    GET_VERSION: 0x00,
+    SIGN_SECP256K1: 0x02,
+    GET_ADDR_SECP256K1: 0x04,
   }
 
   static _params = {
     cla: CLA,
     ins: { ...CosmosApp._INS } as INSGeneric,
-    p1Values: { ONLY_RETRIEVE: 0x00 as 0, SHOW_ADDRESS_IN_DEVICE: 0x01 as 1 },
+    p1Values: { ONLY_RETRIEVE: 0x00, SHOW_ADDRESS_IN_DEVICE: 0x01 },
     chunkSize: 250,
     requiredPathLengths: [5],
   }
@@ -62,7 +62,7 @@ export default class CosmosApp extends BaseApp {
   }
 
   private serializeHRP(hrp: string) {
-    if (hrp == null || hrp.length < 3 || hrp.length > 83) {
+    if (!hrp || hrp.length < 3 || hrp.length > 83) {
       throw new Error('Invalid HRP')
     }
 
@@ -75,7 +75,6 @@ export default class CosmosApp extends BaseApp {
 
   private serializeCosmosPath(path: string) {
     if (typeof path !== 'string') {
-      // NOTE: this is probably unnecessary
       throw new ResponseError(LedgerError.GenericError, "Path should be a string (e.g \"m/44'/461'/5'/0/3\")")
     }
 
@@ -83,8 +82,7 @@ export default class CosmosApp extends BaseApp {
       throw new ResponseError(LedgerError.GenericError, 'Path should start with "m/" (e.g "m/44\'/461\'/5\'/0/3")')
     }
 
-    const pathArray = path.split('/')
-    pathArray.shift() // remove "m"
+    const pathArray = path.split('/').slice(1)
 
     if (this.REQUIRED_PATH_LENGTHS && this.REQUIRED_PATH_LENGTHS.length > 0 && !this.REQUIRED_PATH_LENGTHS.includes(pathArray.length)) {
       throw new ResponseError(LedgerError.GenericError, "Invalid path length. (e.g \"m/44'/5757'/5'/0/3\")")
@@ -119,10 +117,9 @@ export default class CosmosApp extends BaseApp {
       const responseBuffer = await this.transport.send(this.CLA, this.INS.GET_ADDR_SECP256K1, 0, 0, data)
       const response = processResponse(responseBuffer)
       const compressed_pk = Buffer.from(response.readBytes(PKLEN))
+      const bech32_address = response.readBytes(response.length()).toString()
 
-      return {
-        compressed_pk,
-      } as ResponsePubkey
+      return { compressed_pk, bech32_address }
     } catch (e) {
       throw processErrorResponse(e)
     }
@@ -139,10 +136,7 @@ export default class CosmosApp extends BaseApp {
       const compressed_pk = response.readBytes(PKLEN)
       const bech32_address = response.readBytes(response.length()).toString()
 
-      return {
-        compressed_pk,
-        bech32_address,
-      } as ResponseAddress
+      return { compressed_pk, bech32_address }
     } catch (e) {
       throw processErrorResponse(e)
     }
@@ -159,10 +153,7 @@ export default class CosmosApp extends BaseApp {
       const compressed_pk = response.readBytes(PKLEN)
       const bech32_address = response.readBytes(response.length()).toString()
 
-      return {
-        compressed_pk,
-        bech32_address,
-      } as ResponseAddress
+      return { compressed_pk, bech32_address }
     } catch (e) {
       throw processErrorResponse(e)
     }
@@ -177,18 +168,14 @@ export default class CosmosApp extends BaseApp {
     return bech32.encode(hrp, bech32.toWords(hashRip))
   }
 
-  async prepareChunks_hrp(path: string, buffer: Buffer, hrp: string | undefined) {
+  async prepareChunks_hrp(path: string, buffer: Buffer, hrp?: string) {
     const serializedPath = this.serializeCosmosPath(path)
-    const firstChunk = hrp === undefined ? serializedPath : Buffer.concat([serializedPath, this.serializeHRP(hrp)])
+    const firstChunk = hrp ? Buffer.concat([serializedPath, this.serializeHRP(hrp)]) : serializedPath
 
-    const chunks = []
-    chunks.push(firstChunk)
+    const chunks = [firstChunk]
 
     for (let i = 0; i < buffer.length; i += this.CHUNK_SIZE) {
-      let end = i + this.CHUNK_SIZE
-      if (i > buffer.length) {
-        end = buffer.length
-      }
+      const end = Math.min(i + this.CHUNK_SIZE, buffer.length)
       chunks.push(buffer.subarray(i, end))
     }
 
@@ -196,41 +183,30 @@ export default class CosmosApp extends BaseApp {
   }
 
   async signSendCosmosChunk(chunkIdx: number, chunkNum: number, chunk: Buffer, txtype = P2_VALUES.JSON): Promise<ResponsePayload> {
-    let payloadType = PAYLOAD_TYPE.ADD
-    if (chunkIdx === 1) {
-      payloadType = PAYLOAD_TYPE.INIT
-    }
-    if (chunkIdx === chunkNum) {
-      payloadType = PAYLOAD_TYPE.LAST
-    }
+    const payloadType = chunkIdx === 1 ? PAYLOAD_TYPE.INIT : chunkIdx === chunkNum ? PAYLOAD_TYPE.LAST : PAYLOAD_TYPE.ADD
 
     const statusList = [LedgerError.NoErrors, LedgerError.DataIsInvalid, LedgerError.BadKeyHandle]
 
     const responseBuffer = await this.transport.send(this.CLA, this.INS.SIGN_SECP256K1, payloadType, txtype, chunk, statusList)
-    const response = processResponse(responseBuffer)
-
-    return response
+    return processResponse(responseBuffer)
   }
 
-  private async signImpl(path: string, buffer: Buffer, hrp: string | undefined, txtype: number): Promise<ResponseSign> {
+  private async signImpl(path: string, buffer: Buffer, txtype: number, hrp?: string): Promise<ResponseSign> {
     const chunks = await this.prepareChunks_hrp(path, buffer, hrp)
 
     try {
       let result = await this.signSendCosmosChunk(1, chunks.length, chunks[0], txtype)
 
-      for (let i = 1; i < chunks.length; i += 1) {
-        result = await this.signSendCosmosChunk(1 + i, chunks.length, chunks[i], txtype)
+      for (let i = 1; i < chunks.length; i++) {
+        result = await this.signSendCosmosChunk(i + 1, chunks.length, chunks[i], txtype)
       }
 
-      return {
-        signature: result.readBytes(result.length()),
-      }
+      return { signature: result.readBytes(result.length()) }
     } catch (e) {
       throw processErrorResponse(e)
     }
   }
-
-  async sign(path: string, buffer: Buffer, hrp: string | undefined, txtype = P2_VALUES.JSON): Promise<ResponseSign> {
-    return await this.signImpl(path, buffer, hrp, txtype)
+  async sign(path: string, buffer: Buffer, hrp?: string, txtype = P2_VALUES.JSON): Promise<ResponseSign> {
+    return this.signImpl(path, buffer, txtype, hrp)
   }
 }
