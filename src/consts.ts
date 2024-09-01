@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  ******************************************************************************* */
-export const CLA = 0x55;
+export const CLA = 0x55
 
 export const enum P1_VALUES {
   ONLY_RETRIEVE = 0x00,
@@ -25,4 +25,4 @@ export const enum P2_VALUES {
   TEXTUAL = 0x1,
 }
 
-export const PKLEN = 33;
+export const PKLEN = 33
