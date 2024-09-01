@@ -14,7 +14,7 @@ We recommend using the npmjs package in order to receive updates/fixes.
 # Available commands
 
 | Operation            | Response                    | Command                     |
-|----------------------|-----------------------------|-----------------------------|
+| -------------------- | --------------------------- | --------------------------- |
 | getVersion           | app version                 | ---------------             |
 | publicKey            | pubkey                      | path (legacy command)       |
 | getAddressAndPubKey  | pubkey + address            | path + ( showInDevice )     |

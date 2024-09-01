@@ -14,6 +14,9 @@
  *  limitations under the License.
  ******************************************************************************* */
 import type Transport from '@ledgerhq/hw-transport'
+import { ripemd160 } from '@noble/hashes/ripemd160'
+import { sha256 } from '@noble/hashes/sha256'
+import { bech32 } from '@scure/base'
 import BaseApp, {
   HARDENED,
   INSGeneric,
@@ -28,10 +31,6 @@ import { ByteStream } from '@zondax/ledger-js/dist/byteStream'
 
 import { CLA, P1_VALUES, P2_VALUES, PKLEN } from './consts'
 import { type ResponseAddress, type ResponsePubkey, ResponseSign } from './types'
-
-import { ripemd160 } from '@noble/hashes/ripemd160'
-import { sha256 } from '@noble/hashes/sha256'
-import { bech32 } from '@scure/base'
 
 export default class CosmosApp extends BaseApp {
   static _INS = {
