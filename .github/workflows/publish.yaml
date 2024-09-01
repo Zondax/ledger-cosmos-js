@@ -15,32 +15,50 @@ jobs:
       datetime: ${{ steps.get-datetime.outputs.datetime }}
     steps:
       - id: get-datetime
-        run: echo "::set-output name=datetime::$(date +'%Y%m%d%H%M%S')"
+        run: echo "datetime=$(date +'%Y%m%d%H%M%S')" >> $GITHUB_OUTPUT
 
   publish_npm_package:
-    runs-on: ubuntu-latest
+    runs-on: zondax-runners
+    container:
+      image: node:20-bookworm
+      env:
+        HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        HEAD_BRANCH_NAME: ${{ github.head_ref }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
       - name: Install node
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v4
         with:
           registry-url: 'https://registry.npmjs.org'
           scope: '@zondax'
+
+      - uses: oven-sh/setup-bun@v1
+
+      - run: bun install
+
       - run: mv README-npm.md README.md
-      - name: Install yarn
-        run: npm install -g yarn
-      - run: yarn install
-      - run: yarn build
+      - run: bun run build
+
       - name: Get latest release version number
         id: get_version
         uses: battila7/get-version-action@v2
+
+      - name: Show version
+        run: echo ${{ steps.get_version.outputs.version }}
+
       - name: Update tag
         run: |
-          echo Publishing as ${{ steps.get_version.outputs.version }}
           npm --allow-same-version --no-git-tag-version version ${{ steps.get_version.outputs.version }}
+
       - name: Publish package
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN_PUBLISH_AUTO }}
+          NODE_REPO_SERVER: 'https://registry.npmjs.org'
         run: |
+          npm config set registry $NODE_REPO_SERVER
+          npm config set //registry.npmjs.org/:_authToken $NODE_AUTH_TOKEN
           npm publish
