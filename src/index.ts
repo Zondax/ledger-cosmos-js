@@ -29,9 +29,9 @@ import { ByteStream } from '@zondax/ledger-js/dist/byteStream'
 import { CLA, P1_VALUES, P2_VALUES, PKLEN } from './consts'
 import { type ResponseAddress, type ResponsePubkey, ResponseSign } from './types'
 
-const crypto = require('crypto')
-const bech32 = require('bech32')
-const Ripemd160 = require('ripemd160')
+import { ripemd160 } from '@noble/hashes/ripemd160'
+import { sha256 } from '@noble/hashes/sha256'
+import { bech32 } from '@scure/base'
 
 export default class CosmosApp extends BaseApp {
   static _INS = {
@@ -91,7 +91,7 @@ export default class CosmosApp extends BaseApp {
     }
 
     const buf = new ByteStream()
-    pathArray.forEach((child: string, i: number) => {
+    pathArray.forEach((child: string) => {
       let value = 0
 
       if (child.endsWith("'")) {
@@ -112,7 +112,7 @@ export default class CosmosApp extends BaseApp {
   }
 
   async publicKey(path: string): Promise<ResponsePubkey> {
-    const serializedPath = await this.serializeCosmosPath(path)
+    const serializedPath = this.serializeCosmosPath(path)
     const data = Buffer.concat([this.serializeHRP('cosmos'), serializedPath])
 
     try {
@@ -129,7 +129,7 @@ export default class CosmosApp extends BaseApp {
   }
 
   async getAddressAndPubKey(path: string, hrp: string): Promise<ResponseAddress> {
-    const serializedPath = await this.serializeCosmosPath(path)
+    const serializedPath = this.serializeCosmosPath(path)
     const data = Buffer.concat([this.serializeHRP(hrp), serializedPath])
 
     try {
@@ -149,7 +149,7 @@ export default class CosmosApp extends BaseApp {
   }
 
   async showAddressAndPubKey(path: string, hrp: string): Promise<ResponseAddress> {
-    const serializedPath = await this.serializeCosmosPath(path)
+    const serializedPath = this.serializeCosmosPath(path)
     const data = Buffer.concat([this.serializeHRP(hrp), serializedPath])
 
     try {
@@ -172,13 +172,13 @@ export default class CosmosApp extends BaseApp {
     if (pk.length !== 33) {
       throw new Error('expected compressed public key [31 bytes]')
     }
-    const hashSha256 = crypto.createHash('sha256').update(pk).digest()
-    const hashRip = new Ripemd160().update(hashSha256).digest()
+    const hashSha256 = sha256(pk)
+    const hashRip = ripemd160(hashSha256)
     return bech32.encode(hrp, bech32.toWords(hashRip))
   }
 
   async prepareChunks_hrp(path: string, buffer: Buffer, hrp: string | undefined) {
-    const serializedPath = await this.serializeCosmosPath(path)
+    const serializedPath = this.serializeCosmosPath(path)
     const firstChunk = hrp === undefined ? serializedPath : Buffer.concat([serializedPath, this.serializeHRP(hrp)])
 
     const chunks = []

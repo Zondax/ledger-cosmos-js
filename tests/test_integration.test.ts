@@ -35,7 +35,7 @@ import {
 } from './helper'
 
 describe('CosmosApp Address Generation', () => {
-  it('Retreive Address and Pubkey', async () => {
+  it('Retrieve Address and Pubkey', async () => {
     const responseBuffer = Buffer.from(GET_ADDRESS_PUBKEY_RESPONSE, 'hex')
 
     const transport = new MockTransport(responseBuffer)
@@ -65,9 +65,10 @@ describe('CosmosApp Address Generation', () => {
     const transport = new MockTransport(responseBuffer)
     const app = new CosmosApp(transport)
     try {
-      const resp = await app.getAddressAndPubKey(ETH_PATH, COSMOS_HRP)
+      await app.getAddressAndPubKey(ETH_PATH, COSMOS_HRP)
     } catch (e: any) {
       expect(e.message).toEqual('Transaction rejected')
+      expect(e.returnCode).toEqual(0x6986)
     }
   })
 
@@ -87,7 +88,7 @@ describe('CosmosApp Address Generation', () => {
     const transport = new MockTransport(responseBuffer)
     const app = new CosmosApp(transport)
     try {
-      const resp = await app.getAddressAndPubKey("m/44'/2147483647'/0'/0/4294967295", 'cosmos')
+      await app.getAddressAndPubKey("m/44'/2147483647'/0'/0/4294967295", 'cosmos')
     } catch (e: any) {
       expect(e.returnCode).toEqual(0xffff)
     }
