@@ -18,6 +18,7 @@ import { ripemd160 } from '@noble/hashes/ripemd160'
 import { sha256 } from '@noble/hashes/sha256'
 import { bech32 } from '@scure/base'
 import BaseApp, {
+  ERROR_DESCRIPTION_OVERRIDE,
   HARDENED,
   INSGeneric,
   LedgerError,
@@ -31,6 +32,23 @@ import { ByteStream } from '@zondax/ledger-js/dist/byteStream'
 
 import { CLA, P1_VALUES, P2_VALUES, PKLEN } from './consts'
 import { type ResponseAddress, type ResponsePubkey, ResponseSign } from './types'
+
+enum CosmosCostumError {
+  ErrorTransactionDataExceedsBufferCapacity = 0x6988,
+  ErrorInvalidHDPathValue = 0x6989,
+  ErrorHrpWrongLength = 0x698a,
+  ErrorInvalidHDPathCoinValue = 0x698b,
+  ErrorChainConfigNotSupported = 0x698c,
+}
+
+const COSMOS_CUSTOM_ERROR_DESCRIPTIONS = {
+  ...ERROR_DESCRIPTION_OVERRIDE,
+  [CosmosCostumError.ErrorTransactionDataExceedsBufferCapacity]: "Transaction data exceeds the device's internal buffer capacity",
+  [CosmosCostumError.ErrorInvalidHDPathValue]: 'Invalid HD Path Value. Expert Mode required.',
+  [CosmosCostumError.ErrorHrpWrongLength]: 'Invalid HRP length',
+  [CosmosCostumError.ErrorInvalidHDPathCoinValue]: 'Invalid HD Path Coin Value',
+  [CosmosCostumError.ErrorChainConfigNotSupported]: 'Chain config not supported',
+}
 
 export default class CosmosApp extends BaseApp {
   static _INS = {
@@ -120,7 +138,7 @@ export default class CosmosApp extends BaseApp {
 
       return { compressed_pk, bech32_address }
     } catch (e) {
-      throw processErrorResponse(e)
+      throw processErrorResponse(e, COSMOS_CUSTOM_ERROR_DESCRIPTIONS)
     }
   }
 
@@ -137,7 +155,7 @@ export default class CosmosApp extends BaseApp {
 
       return { compressed_pk, bech32_address }
     } catch (e) {
-      throw processErrorResponse(e)
+      throw processErrorResponse(e, COSMOS_CUSTOM_ERROR_DESCRIPTIONS)
     }
   }
 
@@ -154,7 +172,7 @@ export default class CosmosApp extends BaseApp {
 
       return { compressed_pk, bech32_address }
     } catch (e) {
-      throw processErrorResponse(e)
+      throw processErrorResponse(e, COSMOS_CUSTOM_ERROR_DESCRIPTIONS)
     }
   }
 
@@ -202,7 +220,7 @@ export default class CosmosApp extends BaseApp {
 
       return { signature: result.readBytes(result.length()) }
     } catch (e) {
-      throw processErrorResponse(e)
+      throw processErrorResponse(e, COSMOS_CUSTOM_ERROR_DESCRIPTIONS)
     }
   }
   async sign(path: string, buffer: Buffer, hrp?: string, txtype = P2_VALUES.JSON): Promise<ResponseSign> {
