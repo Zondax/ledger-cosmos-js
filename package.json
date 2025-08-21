@@ -27,13 +27,13 @@
     "package.json"
   ],
   "scripts": {
-    "build": "bunx tsc",
-    "format": "FORCE_COLOR=1 bunx prettier --write . && bunx sort-package-json",
-    "format:check": "FORCE_COLOR=1 bunx prettier --check .",
-    "lint": "bunx eslint .",
-    "lint:fix": "bunx eslint --fix .",
-    "test": "bun run build && bunx jest .",
-    "upgrade": "bunx npm-check-updates -i"
+    "build": "tsc",
+    "format": "FORCE_COLOR=1 prettier --write . && sort-package-json",
+    "format:check": "FORCE_COLOR=1 prettier --check .",
+    "lint": "eslint .",
+    "lint:fix": "eslint --fix .",
+    "test": "yarn build && jest .",
+    "upgrade": "npx npm-check-updates -i"
   },
   "dependencies": {
     "@ledgerhq/hw-transport": "6.31.9",
