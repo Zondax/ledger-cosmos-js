@@ -24,7 +24,7 @@ jobs:
         HEAD_BRANCH_NAME: ${{ github.head_ref }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           submodules: true
 
@@ -35,6 +35,12 @@ jobs:
           scope: '@zondax'
 
       - uses: oven-sh/setup-bun@v1
+
+      - name: Install build dependencies
+        run: |
+          apt-get update
+          apt-get install -y build-essential python3 libusb-1.0-0-dev libudev-dev
+          npm install -g node-gyp node-gyp-build
 
       - run: bun install
 
