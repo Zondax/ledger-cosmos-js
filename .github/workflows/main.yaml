@@ -42,10 +42,10 @@ jobs:
           apt-get install -y build-essential python3 libusb-1.0-0-dev libudev-dev
           npm install -g node-gyp node-gyp-build
 
-      - run: bun install
+      - run: yarn install
 
-      - run: bun run format:check
+      - run: yarn format:check
 
-      - run: bun lint
+      - run: yarn lint
 
-      - run: bun test
+      - run: yarn test
