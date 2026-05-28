@@ -34,18 +34,15 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
           scope: '@zondax'
 
-      - uses: oven-sh/setup-bun@v1
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11
 
-      - name: Install build dependencies
-        run: |
-          apt-get update
-          apt-get install -y build-essential python3 libusb-1.0-0-dev libudev-dev
-          npm install -g node-gyp node-gyp-build
+      - run: pnpm install --frozen-lockfile
 
-      - run: yarn install
+      - run: pnpm format:check
 
-      - run: yarn format:check
+      - run: pnpm lint
 
-      - run: yarn lint
-
-      - run: yarn test
+      - run: pnpm test

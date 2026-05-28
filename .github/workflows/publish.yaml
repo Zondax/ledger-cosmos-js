@@ -36,12 +36,15 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
           scope: '@zondax'
 
-      - uses: oven-sh/setup-bun@v1
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11
 
-      - run: bun install
+      - run: pnpm install --frozen-lockfile
 
       - run: mv README-npm.md README.md
-      - run: bun run build
+      - run: pnpm build
 
       - name: Get latest release version number
         id: get_version

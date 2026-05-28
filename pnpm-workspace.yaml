@@ -1,0 +1,4 @@
+allowBuilds:
+  node-hid: false
+  unrs-resolver: false
+  usb: false
