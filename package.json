@@ -32,8 +32,8 @@
     "format:check": "FORCE_COLOR=1 prettier --check .",
     "lint": "eslint .",
     "lint:fix": "eslint --fix .",
-    "test": "yarn build && jest .",
-    "upgrade": "npx npm-check-updates -i"
+    "test": "pnpm build && jest .",
+    "upgrade": "pnpm dlx npm-check-updates -i"
   },
   "dependencies": {
     "@ledgerhq/hw-transport": "6.31.9",
@@ -70,8 +70,7 @@
     "typescript": "^5.9.2"
   },
   "volta": {
-    "node": "20.11.1",
-    "bun": "1.0.20"
+    "node": "20.11.1"
   },
   "publishConfig": {
     "access": "public"
