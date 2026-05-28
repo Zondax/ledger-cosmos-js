@@ -18,7 +18,7 @@ jobs:
     needs: [configure]
     runs-on: ubuntu-latest
     container:
-      image: node:20-bookworm
+      image: node:22-bookworm
       env:
         HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         HEAD_BRANCH_NAME: ${{ github.head_ref }}
