@@ -1,67 +1,28 @@
-name: 'Publish packages'
+name: Publish NPM Package
 
 on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
   release:
-    types:
-      - published
-      - edited
-    tags:
-      - "v[0-9]+(\\.[0-9]+)*"
+    types: [created]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write
 
 jobs:
-  configure:
-    runs-on: ubuntu-latest
-    outputs:
-      datetime: ${{ steps.get-datetime.outputs.datetime }}
-    steps:
-      - id: get-datetime
-        run: echo "datetime=$(date +'%Y%m%d%H%M%S')" >> $GITHUB_OUTPUT
-
-  publish_npm_package:
-    runs-on: zondax-runners
-    container:
-      image: node:22-bookworm
-      env:
-        HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        HEAD_BRANCH_NAME: ${{ github.head_ref }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-        with:
-          submodules: true
-
-      - name: Install node
-        uses: actions/setup-node@v4
-        with:
-          registry-url: 'https://registry.npmjs.org'
-          scope: '@zondax'
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 11
-
-      - run: pnpm install --frozen-lockfile
-
-      - run: mv README-npm.md README.md
-      - run: pnpm build
-
-      - name: Get latest release version number
-        id: get_version
-        uses: battila7/get-version-action@v2
-
-      - name: Show version
-        run: echo ${{ steps.get_version.outputs.version }}
-
-      - name: Update tag
-        run: |
-          npm --allow-same-version --no-git-tag-version version ${{ steps.get_version.outputs.version }}
-
-      - name: Publish package
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN_PUBLISH_AUTO }}
-          NODE_REPO_SERVER: 'https://registry.npmjs.org'
-        run: |
-          npm config set registry $NODE_REPO_SERVER
-          npm config set //registry.npmjs.org/:_authToken $NODE_AUTH_TOKEN
-          npm publish
+  publish-npm:
+    uses: zondax/_workflows/.github/workflows/_publish-npm.yaml@v7
+    permissions:
+      contents: read
+      id-token: write # Required for OIDC trusted publishing - must be in caller!
+    with:
+      timeout_minutes: 15
+      dry_run: ${{ github.event_name != 'release' }}
+      github_app_auth: false

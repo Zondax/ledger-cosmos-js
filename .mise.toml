@@ -1,0 +1,7 @@
+[tools]
+node = "22"
+pnpm = "latest"
+
+[tasks.ci_postinstall]
+description = "Install dependencies for CI"
+run = "pnpm install --frozen-lockfile --ignore-scripts"
