@@ -36,10 +36,9 @@
     "upgrade": "pnpm dlx npm-check-updates -i"
   },
   "dependencies": {
-    "@ledgerhq/hw-transport": "6.31.9",
     "@noble/hashes": "^1.8.0",
     "@scure/base": "^1.2.6",
-    "@zondax/ledger-js": "^1.3.1",
+    "@zondax/ledger-js": "github:Zondax/ledger-js#feat/dmk-transport",
     "buffer": "^6.0.3",
     "ripemd160": "^2.0.2"
   },
