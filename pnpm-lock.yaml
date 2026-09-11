@@ -15,8 +15,8 @@ importers:
         specifier: ^1.2.6
         version: 1.2.6
       '@zondax/ledger-js':
-        specifier: github:Zondax/ledger-js#feat/dmk-transport
-        version: https://codeload.github.com/Zondax/ledger-js/tar.gz/4e9cb4ced4c94de3ee036c2e60d23e152739682b
+        specifier: ^2.0.0
+        version: 2.0.0
       buffer:
         specifier: ^6.0.3
         version: 6.0.3
@@ -773,9 +773,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@zondax/ledger-js@https://codeload.github.com/Zondax/ledger-js/tar.gz/4e9cb4ced4c94de3ee036c2e60d23e152739682b':
-    resolution: {gitHosted: true, tarball: https://codeload.github.com/Zondax/ledger-js/tar.gz/4e9cb4ced4c94de3ee036c2e60d23e152739682b}
-    version: 0.0.0
+  '@zondax/ledger-js@2.0.0':
+    resolution: {integrity: sha512-22dCyTbU38bZxRl7HpC2z1tQTfrbzOMy37PyzftBBK739GR2uBJ/EJy38gvuwwVHmX29e5tUa4MmJTsvUKQ2mg==}
     engines: {node: '>=20'}
 
   acorn-jsx@5.3.2:
@@ -2166,8 +2165,8 @@ packages:
   react-is@18.3.1:
     resolution: {integrity: sha512-/LLMVyas0ljjAtoYiPqYiL8VWXzUUdThrmU5+n20DZv+a+ClRoevUzw5JxU+Ieh5/c87ytoTBV9G1FiKfNJdmg==}
 
-  react-is@19.2.6:
-    resolution: {integrity: sha512-XjBR15BhXuylgWGuslhDKqlSayuqvqBX91BP8pauG8kd1zY8kotkNWbXksTCNRarse4kuGbe2kIY05ARtwNIvw==}
+  react-is@19.3.0:
+    resolution: {integrity: sha512-UpMYezM4v5/18F28aC66AEsjXIgE02kyEMH6yLdgLXu/UTfa1Ntwck/nNLrbqJsEXW7gPb0coNO9FQse9WTovA==}
 
   readable-stream@2.3.8:
     resolution: {integrity: sha512-8p0AUk4XODgIewSi0l8Epjs+EVnWiK7NoDIEGU0HhE7+ZyY8D1IMY7odu5lRrFXGg71L15KG8QrPmum45RTtdA==}
@@ -3465,7 +3464,7 @@ snapshots:
   '@unrs/resolver-binding-win32-x64-msvc@1.12.2':
     optional: true
 
-  '@zondax/ledger-js@https://codeload.github.com/Zondax/ledger-js/tar.gz/4e9cb4ced4c94de3ee036c2e60d23e152739682b': {}
+  '@zondax/ledger-js@2.0.0': {}
 
   acorn-jsx@5.3.2(acorn@8.16.0):
     dependencies:
@@ -5103,7 +5102,7 @@ snapshots:
       '@jest/schemas': 30.4.1
       ansi-styles: 5.2.0
       react-is-18: react-is@18.3.1
-      react-is-19: react-is@19.2.6
+      react-is-19: react-is@19.3.0
 
   process-nextick-args@2.0.1: {}
 
@@ -5125,7 +5124,7 @@ snapshots:
 
   react-is@18.3.1: {}
 
-  react-is@19.2.6: {}
+  react-is@19.3.0: {}
 
   readable-stream@2.3.8:
     dependencies:

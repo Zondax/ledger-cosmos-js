@@ -38,7 +38,7 @@
   "dependencies": {
     "@noble/hashes": "^1.8.0",
     "@scure/base": "^1.2.6",
-    "@zondax/ledger-js": "github:Zondax/ledger-js#feat/dmk-transport",
+    "@zondax/ledger-js": "^2.0.0",
     "buffer": "^6.0.3",
     "ripemd160": "^2.0.2"
   },

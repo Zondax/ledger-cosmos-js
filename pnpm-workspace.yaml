@@ -1,4 +1,7 @@
 allowBuilds:
+  # Its package.json declares a `prepare` script, which pnpm asks about; a registry tarball
+  # never runs one, and it is no longer consumed from a git ref, so nothing needs building.
+  '@zondax/ledger-js': false
   node-hid: false
   unrs-resolver: false
   usb: false
