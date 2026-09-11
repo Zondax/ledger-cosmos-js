@@ -13,7 +13,6 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  ******************************************************************************* */
-import type Transport from '@ledgerhq/hw-transport'
 import { ripemd160 } from '@noble/hashes/legacy.js'
 import { sha256 } from '@noble/hashes/sha2.js'
 import { bech32 } from '@scure/base'
@@ -22,6 +21,7 @@ import BaseApp, {
   HARDENED,
   INSGeneric,
   LedgerError,
+  type LedgerTransport,
   PAYLOAD_TYPE,
   ResponseError,
   ResponsePayload,
@@ -70,7 +70,7 @@ export default class CosmosApp extends BaseApp {
    * @param transport - The transport instance.
    * @throws {Error} - If the transport is not defined.
    */
-  constructor(transport: Transport) {
+  constructor(transport: LedgerTransport) {
     super(transport, CosmosApp._params)
 
     if (!this.transport) {
