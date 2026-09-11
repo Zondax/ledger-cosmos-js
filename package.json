@@ -14,7 +14,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/cosmos/ledger-cosmos-js.git"
+    "url": "git+https://github.com/Zondax/ledger-cosmos-js.git"
   },
   "license": "Apache-2.0",
   "author": "Zondax AG",
