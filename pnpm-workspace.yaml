@@ -5,3 +5,7 @@ allowBuilds:
   node-hid: false
   unrs-resolver: false
   usb: false
+
+# First-party: pnpm 11's default 24h gate would fail CI until the tarball ages.
+minimumReleaseAgeExclude:
+  - '@zondax/ledger-js'
