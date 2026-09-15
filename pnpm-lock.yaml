@@ -15,8 +15,8 @@ importers:
         specifier: ^1.2.6
         version: 1.2.6
       '@zondax/ledger-js':
-        specifier: ^2.0.0
-        version: 2.0.0
+        specifier: ^2.1.0
+        version: 2.1.0
       buffer:
         specifier: ^6.0.3
         version: 6.0.3
@@ -773,8 +773,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@zondax/ledger-js@2.0.0':
-    resolution: {integrity: sha512-22dCyTbU38bZxRl7HpC2z1tQTfrbzOMy37PyzftBBK739GR2uBJ/EJy38gvuwwVHmX29e5tUa4MmJTsvUKQ2mg==}
+  '@zondax/ledger-js@2.1.0':
+    resolution: {integrity: sha512-tFaaJOtbfanOXCPDihTtLE0NfIXuovUrKjAPYgomKGtmhO0ftCp8mdrQNaUuygRFDK5UbNSidtx5hdAJk+sthQ==}
     engines: {node: '>=20'}
 
   acorn-jsx@5.3.2:
@@ -3464,7 +3464,7 @@ snapshots:
   '@unrs/resolver-binding-win32-x64-msvc@1.12.2':
     optional: true
 
-  '@zondax/ledger-js@2.0.0': {}
+  '@zondax/ledger-js@2.1.0': {}
 
   acorn-jsx@5.3.2(acorn@8.16.0):
     dependencies:
